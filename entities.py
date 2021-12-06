@@ -42,13 +42,13 @@ class StressStateValues:
     def __repr__(self):
         return (
             f"Values:\n"
-            f"s1: {self.sigma1:.2f}\n"
-            f"s2: {self.sigma2:.2f}\n"
-            f"s3: {self.sigma3:.2f}\n"
+            f"σ₁: {self.sigma1:.2f}\n"
+            f"σ₂: {self.sigma2:.2f}\n"
+            f"σ₃: {self.sigma3:.2f}\n"
             f"p: {self.p:.2f}\n"
-            f"tau: {self.tau:.2f}\n"
-            f"mu_s: {self.mu_s:.2f}\n"
-            f"phi: {self.phi:.2f}\n"
+            f"𝜏: {self.tau:.2f}\n"
+            f"μ_σ: {self.mu_s:.2f}\n"
+            f"φ: {self.phi:.2f}\n"
                 )
 
 class StressStateOrientation:
@@ -95,9 +95,9 @@ class StressStateOrientation:
     def __repr__(self):
         return (
             "Orientations:\n"
-            f"s1: {self.sigma1.dir:.2f}, {self.sigma1.dip:.2f}\n"
-            f"s2: {self.sigma2.dir:.2f}, {self.sigma2.dip:.2f}\n"
-            f"s3: {self.sigma3.dir:.2f}, {self.sigma3.dip:.2f}"
+            f"σ₁: {self.sigma1.dir:.2f}° ∠{self.sigma1.dip:.2f}°\n"
+            f"σ₂: {self.sigma2.dir:.2f}° ∠{self.sigma2.dip:.2f}°\n"
+            f"σ₃: {self.sigma3.dir:.2f}° ∠{self.sigma3.dip:.2f}°"
                 )
 
 

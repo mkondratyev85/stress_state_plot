@@ -11,8 +11,6 @@ def interp(pointx, pointy, values):
     data =  griddata((pointx, pointy), values, (X, Y), method='linear')
     return X, Y, data
 
-
-
 class Plot:
 
     def __call__(self, stresses_on_plane, stress_state, output):
@@ -108,11 +106,11 @@ class Plot:
         ax.scatter(*plane2xy(self.sigma3), marker="^", color='black')
         ax.text(*plane2xy(self.sigma1), r'$\sigma1$', fontsize=10)
         ax.text(*plane2xy(self.sigma3), r'$\sigma3$', fontsize=10)
+
         if directions:
             for x1, y1, x2, y2 in zip(*directions):
                 ax.plot((x1, x2), (y1, y2), color='black')
                 ax.scatter(x1, y1, marker="o", color='black')
-
 
         ax.add_patch(stereonet_border)
         self.fig.colorbar(p, ax=ax)

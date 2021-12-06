@@ -1,7 +1,11 @@
 from math import tan, sin, cos, radians, atan2, degrees
 from dataclasses import dataclass
 
+from rich.progress import track
+
 from plane import Plane
+
+
 
 @dataclass
 class StressOnPlane:
@@ -128,8 +132,7 @@ def calculate_stress_on_planes(stress_state):
 
     stresses_on_plane = []
 
-    for dr in range(0, 361, 2):
-        print(dr)
+    for dr in track(range(0, 361, 2)):
         for dp in range(0, 91, 2):
             plane = Plane(dr, dp)
 
