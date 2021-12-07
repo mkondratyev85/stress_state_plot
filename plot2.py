@@ -13,10 +13,11 @@ def interp(pointx, pointy, values):
 
 class Plot:
 
-    def __call__(self, stresses_on_plane, stress_state, output):
+    def __call__(self, stresses_on_plane, stress_state, output, fractures=None):
         self.stresses_on_plane = stresses_on_plane
         self.stress_state = stress_state
         self.output = output
+        self.fractures = fractures
         self.output_morh = output[:-4] + "_morh.jpg"
         self.prepare_lists_of_data(0.5)
         self.plot_stereo()
@@ -25,10 +26,16 @@ class Plot:
     def prepare_lists_of_data(self, mu_fracture):
         self.xx = []
         self.yy = []
+        self.fracture_xx = []
+        self.fracture_yy = []
         self.taus = []
         self.snns = []
         self.taus_reduced = []
         self.snns_reduced = []
+        self.fracture_taus = []
+        self.fracture_snns = []
+        self.fracture_taus_reduced = []
+        self.fracture_snns_reduced = []
         self.slip_tendency = []
         self.dilation_tendency = []
         self.fracture_susceptibility = []
@@ -40,6 +47,11 @@ class Plot:
         self.sigma1 = self.stress_state.orientation.sigma1
         self.sigma2 = self.stress_state.orientation.sigma2
         self.sigma3 = self.stress_state.orientation.sigma3
+
+        for fracture in self.fractures:
+            x, y = plane2xy(fracture.normal())
+            self.fracture_xx.append(x)
+            self.fracture_yy.append(y)
 
         for stress_on_plane in self.stresses_on_plane:
             x, y = plane2xy(stress_on_plane.plane)
@@ -58,7 +70,7 @@ class Plot:
             self.fracture_susceptibility.append(s_nn - tau_n/mu_fracture)
 
     def plot_morh(self):
-        self.fig, axs = plt.subplots(2, 3)
+        self.fig, axs = plt.subplots(2, 3, dpi=300, figsize=(12,6))
 
         axs[0, 0].scatter(self.snns, self.taus)
         axs[0, 0].set_aspect('equal', 'box')
@@ -79,7 +91,7 @@ class Plot:
 
 
     def plot_stereo(self):
-        self.fig, axs = plt.subplots(2, 3)
+        self.fig, axs = plt.subplots(2, 3, dpi=300, figsize=(12,6))
 
         self.draw_stereonet(self.snns_reduced, ax=axs[0, 1], title=r'$\sigma_{nn}$')
         self.draw_stereonet(self.taus_reduced, ax=axs[0, 2], title=r'$\tau_{n}$')
@@ -101,11 +113,12 @@ class Plot:
         ax.set_title(title)
         ax.axis('off')
         stereonet_border = plt.Circle((0, 0), 1, color='black', fill=False)
-        ax.scatter(*plane2xy(self.sigma1), marker="s", color='black')
-        ax.scatter(*plane2xy(self.sigma2), marker="o", color='black')
-        ax.scatter(*plane2xy(self.sigma3), marker="^", color='black')
+        ax.scatter(*plane2xy(self.sigma1), marker="s", color='red')
+        ax.scatter(*plane2xy(self.sigma2), marker="o", color='red')
+        ax.scatter(*plane2xy(self.sigma3), marker="^", color='red')
         ax.text(*plane2xy(self.sigma1), r'$\sigma1$', fontsize=10)
         ax.text(*plane2xy(self.sigma3), r'$\sigma3$', fontsize=10)
+        ax.scatter(self.fracture_xx, self.fracture_yy, marker="+", color='black')
 
         if directions:
             for x1, y1, x2, y2 in zip(*directions):

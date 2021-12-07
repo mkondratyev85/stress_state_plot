@@ -49,7 +49,7 @@ class StressStateValues:
             f"𝜏: {self.tau:.2f}\n"
             f"μ_σ: {self.mu_s:.2f}\n"
             f"φ: {self.phi:.2f}\n"
-                )
+               )
 
 class StressStateOrientation:
 
