@@ -79,7 +79,6 @@ def end_of_direction(plane, phi, lenght=5):
 
     return end_plane
 
-
 def chronick(i, n):
     return 1 if n==i else 0
 
@@ -105,7 +104,6 @@ def get_s_tau(plane, mu_s, phi=0):
 
     return s_nn_reduced, s_nm_reduced, s_nt_reduced
 
-
 def calculate_stress(plane, stress_state):
     plane_rotated = rotate_plane(
             stress_state.orientation.sigma1,
@@ -129,15 +127,25 @@ def calculate_stress(plane, stress_state):
 
 
 def calculate_stress_on_planes(stress_state):
-
     stresses_on_plane = []
 
     for dr in track(range(0, 361, 2)):
         for dp in range(0, 91, 2):
-            plane = Plane(dr, dp)
-
-            stresses_on_plane.append(
-                calculate_stress(plane, stress_state),
-                )
+            stresses_on_plane.append(calculate_stress(Plane(dr, dp), stress_state))
 
     return stresses_on_plane
+
+def calculate_stresses_on_fractures(stress_state, fractures):
+    stresses_on_fractures = []
+
+    for fracture in fractures:
+        stresses_on_fractures.append(calculate_stress(fracture.normal(), stress_state))
+
+    return stresses_on_fractures
+
+def fracture_criteria_reduced(stress_on_plane, tau_f, k_f):
+    s_nn = stress_on_plane.s_nn_reduced
+    tau_n = stress_on_plane.tau_n_reduced
+    tau2 = tau_f  - k_f * s_nn
+
+    return 0 if tau_n > tau2 else 1

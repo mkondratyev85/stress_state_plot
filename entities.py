@@ -1,4 +1,11 @@
+"""
+`sigma_p` - Pressure
+`sigma_t` - Tension
+`sigma_i` - Intermediate
+"""
+
 from plane import Plane
+
 
 class StressStateValues:
 
@@ -64,7 +71,7 @@ class StressStateOrientation:
                 dr, dp = maybe_sigma
                 return Plane(dr, dp)
             else:
-                raise ValueError("Value must be either of type Plane or tuple of two float values")
+                raise ValueError("Value for sigma orientation must be either of type Plane or tuple of two float values")
 
         def return_third_axis_from_two(axis1, axis2):
             return axis1.get_perpendicular_between(axis2)
