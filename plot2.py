@@ -14,9 +14,13 @@ def interp(pointx, pointy, values):
 
 class Plot:
 
+
     def __call__(self, stresses_on_plane, stress_state, output, stresses_on_fractures=None):
         self.stresses_on_plane = stresses_on_plane
         self.stresses_on_fractures = stresses_on_fractures
+        print("==v==")
+        print(self.stresses_on_fractures)
+        print("==^==")
         self.stress_state = stress_state
         self.output = output
         self.output_morh = output[:-4] + "_morh.jpg"
@@ -29,9 +33,16 @@ class Plot:
             self.slip_tendency, self.dilation_tendency, self.fracture_susceptibility, self.fracture_criteria) = \
             self.prepare_lists_of_data(mu_fracture=0.5, planes=self.stresses_on_plane)
 
-        (self.fracture_xx, self.fracture_yy, self.fracture_taus, self.fracture_snns,
-            self.fracture_taus_reduced, self.fracture_snns_reduced, _, _, _, _) = \
-            self.prepare_lists_of_data(mu_fracture=0.5, planes=self.stresses_on_fractures)
+        self.fractures_xx = None
+        self.fractures_yy = None
+
+        if self.stresses_on_fractures:
+            (self.fractures_xx, self.fractures_yy, self.fracture_taus, self.fracture_snns,
+                self.fracture_taus_reduced, self.fracture_snns_reduced, _, _, _, _) = \
+                self.prepare_lists_of_data(mu_fracture=0.5, planes=self.stresses_on_fractures)
+
+        print('fractures')
+        print(self.fractures_xx)
 
     def prepare_lists_of_data(self, mu_fracture, planes):
         xx = []
@@ -79,7 +90,8 @@ class Plot:
         axs[0].set_title("Morh diagram")
         axs[0].set_xlabel(r"$\sigma_{nn}$")
         axs[0].set_ylabel(r"$\tau_{n}$")
-        axs[0].scatter(self.fracture_snns, self.fracture_taus, marker="+", color='black')
+        if self.fractures_xx and self.fractures_yy:
+            axs[0].scatter(self.fracture_snns, self.fracture_taus, marker="+", color='black')
 
         tau_f = 0
         k_f = 0.8
@@ -93,7 +105,8 @@ class Plot:
         axs[1].set_title("Morh diagram in reduced stress")
         axs[1].set_xlabel(r"$\sigma_{nn}$")
         axs[1].set_ylabel(r"$\tau_{n}$")
-        axs[1].scatter(self.fracture_snns_reduced, self.fracture_taus_reduced, marker="+", color='black')
+        if self.fractures_xx and self.fractures_yy:
+            axs[1].scatter(self.fracture_snns_reduced, self.fracture_taus_reduced, marker="+", color='black')
         axs[1].plot((x1, x2),(y1, y2), color='red')
 
         self.fig.suptitle(r'$\mu_s$ = %.2f, $\phi$ = %.2f' % (self.stress_state.values.mu_s, self.stress_state.values.phi), fontsize=16)
@@ -131,7 +144,8 @@ class Plot:
         ax.scatter(*plane2xy(self.sigma3), marker="^", color='red')
         ax.text(*plane2xy(self.sigma1), r'$\sigma1$', fontsize=10)
         ax.text(*plane2xy(self.sigma3), r'$\sigma3$', fontsize=10)
-        ax.scatter(self.fracture_xx, self.fracture_yy, marker="+", color='black')
+        if self.fractures_xx and self.fractures_yy:
+            ax.scatter(self.fractures_xx, self.fractures_yy, marker="+", color='black')
 
         if directions:
             for x1, y1, x2, y2 in zip(*directions):
