@@ -10,6 +10,7 @@ def interp(pointx, pointy, values):
     y =  np.linspace(-1, 1, 500)
     X, Y = np.meshgrid(x, y)
     data =  griddata((pointx, pointy), values, (X, Y), method='linear')
+    # data = np.nan_to_num(data)
     return X, Y, data
 
 class Plot:
@@ -18,9 +19,6 @@ class Plot:
     def __call__(self, stresses_on_plane, stress_state, output, stresses_on_fractures=None):
         self.stresses_on_plane = stresses_on_plane
         self.stresses_on_fractures = stresses_on_fractures
-        print("==v==")
-        print(self.stresses_on_fractures)
-        print("==^==")
         self.stress_state = stress_state
         self.output = output
         self.output_morh = output[:-4] + "_morh.jpg"
@@ -41,8 +39,6 @@ class Plot:
                 self.fracture_taus_reduced, self.fracture_snns_reduced, _, _, _, _) = \
                 self.prepare_lists_of_data(mu_fracture=0.5, planes=self.stresses_on_fractures)
 
-        print('fractures')
-        print(self.fractures_xx)
 
     def prepare_lists_of_data(self, mu_fracture, planes):
         xx = []
@@ -134,7 +130,11 @@ class Plot:
 
     def draw_stereonet(self, z, ax, title, colormap=None, levels=None, directions=None):
 
+        if title=='Slip Tendency':
+            print(1)
         p = ax.contourf(*interp(self.xx, self.yy, z), cmap=colormap or 'Oranges', levels=levels)
+        if title=='Slip Tendency':
+            print(2)
         ax.set_aspect('equal', 'box')
         ax.set_title(title)
         ax.axis('off')
@@ -153,6 +153,11 @@ class Plot:
                 ax.scatter(x1, y1, marker="o", color='black')
 
         ax.add_patch(stereonet_border)
-        self.fig.colorbar(p, ax=ax)
+        if title=='Slip Tendency':
+            print(3)
+        self.fig.colorbar(p, ax=ax, spacing='proportional')
+        if title=='Slip Tendency':
+            print(4)
+            print(np.max(z), np.min(z))
 
 plot = Plot()
