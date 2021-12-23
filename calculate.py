@@ -130,7 +130,7 @@ def calculate_stress_on_planes(stress_state):
     stresses_on_plane = []
 
     for dr in track(range(0, 361, 2)):
-        for dp in range(0, 91, 2):
+        for dp in range(0, 91, 1):
             stresses_on_plane.append(calculate_stress(Plane(dr, dp), stress_state))
 
     return stresses_on_plane

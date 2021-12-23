@@ -5,6 +5,7 @@ from calculate import calculate_stress_on_planes, calculate_stresses_on_fracture
 from plot2 import plot
 from entities import StressState
 from load_from_file import load_fractures
+from save_to_xlsx import save_to_xlsx
 
 
 
@@ -24,7 +25,7 @@ def parse_sigma_orientation(string_value):
 
 class Morh:
 
-    def __call__(self, stress_state, file_with_fractures):
+    def __call__(self, stress_state, file_with_fractures, xlsx_path, png_path):
 
         if file_with_fractures:
             fractures = load_fractures(file_with_fractures)
@@ -32,13 +33,18 @@ class Morh:
         else:
             fractures = None
             stresses_on_fractures = None
-
-        # stress_state = stress_state
-        print(fractures)
-        print(stresses_on_fractures)
-        stresses_on_plane = calculate_stress_on_planes(stress_state)
-        plot(stresses_on_plane, stress_state, stresses_on_fractures=stresses_on_fractures, output="/tmp/fig1.png")
         print(stress_state)
+
+        stresses_on_plane = calculate_stress_on_planes(stress_state)
+
+        if png_path:
+            plot(stresses_on_plane, stress_state, stresses_on_fractures=stresses_on_fractures, output=png_path)
+            print(f"Plots saved to {png_path}")
+
+        if xlsx_path:
+            save_to_xlsx(xlsx_path=xlsx_path, stresses_on_plane=stresses_on_fractures)
+            print(f"Report saved to {xlsx_path}")
+
 
 f = Morh()
 
@@ -54,7 +60,9 @@ f = Morh()
 @click.option('--sigma2_orientation', help='Orientation of sigma2.')
 @click.option('--sigma3_orientation', help='Orientation of sigma3.')
 @click.option('--fractures', help='Path to the input file with fractures.')
-def run(pressure, tau, mu_sigma, phi, sigma1_value, sigma2_value, sigma3_value, sigma1_orientation, sigma2_orientation, sigma3_orientation, fractures):
+@click.option('--xlsx_path', help='Path to the output xlsx file with report.')
+@click.option('--png_path', help='Path to the output xlsx file with report.')
+def run(pressure, tau, mu_sigma, phi, sigma1_value, sigma2_value, sigma3_value, sigma1_orientation, sigma2_orientation, sigma3_orientation, fractures, xlsx_path, png_path):
     try:
         stress_state = StressState(
             orientations = {
@@ -76,7 +84,7 @@ def run(pressure, tau, mu_sigma, phi, sigma1_value, sigma2_value, sigma3_value, 
         click.echo(e, err=True)
         return
 
-    f(stress_state=stress_state, file_with_fractures=fractures)
+    f(stress_state=stress_state, file_with_fractures=fractures, xlsx_path=xlsx_path, png_path=png_path)
 
 
 if __name__ == '__main__':

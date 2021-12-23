@@ -130,11 +130,7 @@ class Plot:
 
     def draw_stereonet(self, z, ax, title, colormap=None, levels=None, directions=None):
 
-        if title=='Slip Tendency':
-            print(1)
         p = ax.contourf(*interp(self.xx, self.yy, z), cmap=colormap or 'Oranges', levels=levels)
-        if title=='Slip Tendency':
-            print(2)
         ax.set_aspect('equal', 'box')
         ax.set_title(title)
         ax.axis('off')
@@ -153,11 +149,6 @@ class Plot:
                 ax.scatter(x1, y1, marker="o", color='black')
 
         ax.add_patch(stereonet_border)
-        if title=='Slip Tendency':
-            print(3)
         self.fig.colorbar(p, ax=ax, spacing='proportional')
-        if title=='Slip Tendency':
-            print(4)
-            print(np.max(z), np.min(z))
 
 plot = Plot()
