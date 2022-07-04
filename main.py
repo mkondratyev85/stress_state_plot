@@ -1,6 +1,5 @@
 import click
 
-from plane import Plane
 from calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
 from plot2 import plot
 from entities import StressState
@@ -20,6 +19,18 @@ def parse_sigma_orientation(string_value):
     dir = float(values[0])
     dip = float(values[1])
     return dir, dip
+
+def parse_sigma_and_direction(sigma_and_direction):
+    if sigma_and_direction is None:
+        return None
+    try:
+        sigma_dir, sigma_dip, direction = sigma_and_direction.split(" ")
+        direction = float(direction)
+        sigma_dir = float(sigma_dir)
+        sigma_dip = float(sigma_dip)
+        return sigma_dir, sigma_dip, direction
+    except ValueError:
+        raise ValueError(f"Error while parsing sigma and direction argument {sigma_and_direction}")
 
 
 
@@ -59,16 +70,23 @@ f = Morh()
 @click.option('--sigma1_orientation', help='Orientation of sigma1.')
 @click.option('--sigma2_orientation', help='Orientation of sigma2.')
 @click.option('--sigma3_orientation', help='Orientation of sigma3.')
+@click.option('--sigma1_orientation_and_sigma3_direction', help='Set orientations only via single sigma1_orientationa and direction of sigma3')
+@click.option('--sigma3_orientation_and_sigma1_direction', help='Set orientations only via single sigma3_orientationa and direction of sigma1')
 @click.option('--fractures', help='Path to the input file with fractures.')
 @click.option('--xlsx_path', help='Path to the output xlsx file with report.')
 @click.option('--png_path', help='Path to the output xlsx file with report.')
-def run(pressure, tau, mu_sigma, phi, sigma1_value, sigma2_value, sigma3_value, sigma1_orientation, sigma2_orientation, sigma3_orientation, fractures, xlsx_path, png_path):
+def run(pressure, tau, mu_sigma, phi, sigma1_value, sigma2_value, sigma3_value, 
+        sigma1_orientation, sigma2_orientation, sigma3_orientation, 
+        sigma1_orientation_and_sigma3_direction, sigma3_orientation_and_sigma1_direction, 
+        fractures, xlsx_path, png_path):
     try:
         stress_state = StressState(
             orientations = {
                 'sigma1': parse_sigma_orientation(sigma1_orientation),
                 'sigma2': parse_sigma_orientation(sigma2_orientation),
                 'sigma3': parse_sigma_orientation(sigma3_orientation),
+                'sigma1_sigma3': parse_sigma_and_direction(sigma1_orientation_and_sigma3_direction),
+                'sigma3_sigma1': parse_sigma_and_direction(sigma3_orientation_and_sigma1_direction),
                 },
             values = {
                 'sigma1': sigma1_value,

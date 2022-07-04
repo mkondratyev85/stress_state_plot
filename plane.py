@@ -1,7 +1,6 @@
-import operator
-from math import cos, sin, acos, asin, atan, tan, radians, degrees, sqrt
+from math import cos, sin, acos, asin, atan, tan, radians, degrees
 
-class Plane(object):
+class Plane:
     ''' The Plane is a class of a surface of a fracture or a tranch in a therms 
     of a structural geology (a Dir angle and a Dip angle). This class could 
     perform relationship between Cos1--Cos2-Cos3 and Dir and Dip angles. 
@@ -43,7 +42,6 @@ class Plane(object):
         else:
             raise IndexError("Invalid subscript "+str(key)+" to a plane")
     
-    # String representaion (for debugging)
     def __repr__(self):
         return 'plane(%06.2f, %05.2f)' % (self.dir, self.dip)
 
@@ -55,25 +53,17 @@ class Plane(object):
             dp = 180 - dp
         return dr, dp
     
-    # Cos-sin operations
-    def get_cos3(self):
+    @property
+    def cos3(self):
         return sin(radians(self.dir)) * cos(radians(self.dip))
-    def __setcos3(self, val):
-        pass
-    cos3 = property(get_cos3, __setcos3, None, "gets or sets the guide cos of the plane")
     
-    def get_cos2(self):
+    @property
+    def cos2(self):
         return -1 * sin(radians(self.dip))
-    def __setcos2(self, val):
-        pass
-    cos2 = property(get_cos2, __setcos2, None, "gets or sets the guide cos of the plane")
     
-    def get_cos1(self):
+    @property
+    def cos1(self):
         return cos(radians(self.dir)) * cos(radians(self.dip))
-    def __setcos1(self, val):
-        pass
-    cos1 = property(get_cos1, __setcos1, None, "gets or sets the guide cos of the plane")    
-    
     
     
     def return_angle_between(self, other):
@@ -202,6 +192,15 @@ class Plane(object):
         cos3 = self.cos3
         self.define_by_plane_cos(cos1,cos2,cos3) 
 
+    def make_look_upward(self):
+        if self.dip < 0:
+            self.reverse_back()
+
+    def reverse_back(self):
+        '''Rotates vector 180 degrees so it looks back'''
+        self.dip *= -1
+        self.dir = (self.dir + 180) % 360
+
 def make_plane_look_upward(plane):
     if plane.dip < 0:
         plane.dip *= -1
@@ -212,4 +211,4 @@ def plane2xy(plane):
     make_plane_look_upward(plane)
     r = tan(radians(90 - plane.dip) / 2)
     x, y =  -1*r*sin(radians(plane.dir)), r*cos(radians(plane.dir))
-    return   x,y
+    return x,y

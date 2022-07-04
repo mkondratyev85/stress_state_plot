@@ -6,7 +6,6 @@
 
 from plane import Plane
 
-
 class StressStateValues:
 
     def __init__(self, p=None, tau=None, mu_s=None, phi=None, sigma1=None, sigma2=None, sigma3=None):
@@ -60,7 +59,7 @@ class StressStateValues:
 
 class StressStateOrientation:
 
-    def __init__(self, sigma1=None, sigma2=None, sigma3=None):
+    def __init__(self, sigma1=None, sigma2=None, sigma3=None, sigma1_sigma3=None, sigma3_sigma1=None):
 
         def parse_single_sigma(maybe_sigma):
             if maybe_sigma is None:
@@ -76,16 +75,42 @@ class StressStateOrientation:
         def return_third_axis_from_two(axis1, axis2):
             return axis1.get_perpendicular_between(axis2)
 
-        sigma1 = parse_single_sigma(sigma1)
-        sigma2 = parse_single_sigma(sigma2)
-        sigma3 = parse_single_sigma(sigma3)
+        def get_orientation_from_direction_and_another_sigma(another_sigma, direction):
+            """An ugly way of finding orientation of axis given direction and orientation of perpendicular axis."""
+            maybe_sigma = another_sigma.normal()
+
+            def get_residual(angle):
+                maybe_sigma_rotated = maybe_sigma.rotated(angle)
+                return abs(maybe_sigma_rotated.dir - direction) % 180
+
+            from scipy.optimize import least_squares
+            angle = least_squares(get_residual, x0=90, bounds=(0.0, 360)).x
+            maybe_sigma_rotated = maybe_sigma.rotated(angle)
+
+            if abs(maybe_sigma_rotated.dir - direction) > 170:
+                maybe_sigma_rotated.reverse_back()
+
+            return maybe_sigma_rotated
+
+        if sigma1_sigma3:
+            sigma1_dir, sigma1_dip, direction = sigma1_sigma3
+            sigma1 = Plane(sigma1_dir, sigma1_dip)
+            sigma3 = get_orientation_from_direction_and_another_sigma(another_sigma=sigma1, direction=direction)
+        elif sigma3_sigma1:
+            sigma3_dir, sigma3_dip, direction = sigma3_sigma1
+            sigma3 = Plane(sigma3_dir, sigma3_dip)
+            sigma1 = get_orientation_from_direction_and_another_sigma(another_sigma=sigma3, direction=direction)
+        else:
+            sigma1 = parse_single_sigma(sigma1)
+            sigma2 = parse_single_sigma(sigma2)
+            sigma3 = parse_single_sigma(sigma3)
 
         sigmas = sigma1, sigma2, sigma3
 
         none_sigmas = sum(1 for i in sigmas if i is None)
 
         if none_sigmas > 1:
-            raise ValueError ("Set orientations for at least two sigmas")
+            raise ValueError ("Set orientations for at least two sigmas or one sigma and direction of another sigma")
 
         if none_sigmas == 1:
             if sigma1 is None:
@@ -102,9 +127,9 @@ class StressStateOrientation:
     def __repr__(self):
         return (
             "Orientations:\n"
-            f"σ₁: {self.sigma1.dir:.2f}° ∠{self.sigma1.dip:.2f}°\n"
-            f"σ₂: {self.sigma2.dir:.2f}° ∠{self.sigma2.dip:.2f}°\n"
-            f"σ₃: {self.sigma3.dir:.2f}° ∠{self.sigma3.dip:.2f}°"
+            f"σ₁: {self.sigma1.dir:3.2f}° ∠ {self.sigma1.dip:.2f}°\n"
+            f"σ₂: {self.sigma2.dir:3.2f}° ∠ {self.sigma2.dip:.2f}°\n"
+            f"σ₃: {self.sigma3.dir:3.2f}° ∠ {self.sigma3.dip:.2f}°"
                 )
 
 
