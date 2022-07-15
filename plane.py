@@ -1,4 +1,4 @@
-from math import cos, sin, acos, asin, atan, tan, radians, degrees
+from math import cos, sin, acos, asin, atan, tan, radians, degrees, atan2
 
 class Plane:
     ''' The Plane is a class of a surface of a fracture or a tranch in a therms 
@@ -212,3 +212,14 @@ def plane2xy(plane):
     r = tan(radians(90 - plane.dip) / 2)
     x, y =  -1*r*sin(radians(plane.dir)), r*cos(radians(plane.dir))
     return x,y
+
+def xy2plane(x: float, y:float) -> Plane:
+    """Return plane given its x,y coordinates on 2d stereonet plot.""" 
+    if x**2 + y**2 > 1:
+        raise ValueError(f"Plane with coordinates {x}, {y} lays outside circle.")
+    dir = degrees(atan2(x, y))
+    r = y / cos(radians(dir))
+    dip = 90 - 2 * degrees(atan(r))
+    plane = Plane(dir, dip)
+    plane.make_look_upward()
+    return plane

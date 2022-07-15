@@ -51,7 +51,7 @@ class Morh:
             gui(stress_state)
             return
 
-        stresses_on_plane = calculate_stress_on_planes(stress_state)
+        stresses_on_plane = calculate_stress_on_planes(stress_state, resolution = 15)
 
 
         if png_path:

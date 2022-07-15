@@ -25,6 +25,9 @@ class Plot:
         if output:
             self.output = output
             self.output_morh = output[:-4] + "_morh.jpg"
+        if gui:
+            shape = int(len(stresses_on_plane)**.5)
+            self.gui_array_resolution = (shape, shape)
         self.replot(stresses_on_plane, stresses_on_fractures, stress_state)
         if gui:
             self.gui_update_func = gui_update_func
@@ -34,7 +37,7 @@ class Plot:
 
     def replot(self, stresses_on_plane, stresses_on_fractures, stress_state, init_figs=True):
         self.prepare_everything(stresses_on_plane, stresses_on_fractures, stress_state)
-        # self.plot_stereo(init_figs)
+        self.plot_stereo(init_figs)
         self.plot_morh(init_figs)
 
     def prepare_everything(self, stresses_on_plane, stresses_on_fractures, stress_state):
@@ -75,21 +78,35 @@ class Plot:
         self.sigma3 = self.stress_state.orientation.sigma3
 
         for stress_on_plane in planes:
-            x, y = plane2xy(stress_on_plane.plane)
-            s_nn = stress_on_plane.s_nn
-            s_nm = stress_on_plane.s_nm
-            s_nt = stress_on_plane.s_nt
-            tau_n = stress_on_plane.tau_n
-            xx.append(x)
-            yy.append(y)
-            taus.append(stress_on_plane.tau_n)
-            snns.append(stress_on_plane.s_nn)
-            taus_reduced.append(stress_on_plane.tau_n_reduced)
-            snns_reduced.append(stress_on_plane.s_nn_reduced)
-            fracture_criteria.append(fracture_criteria_reduced(stress_on_plane, tau_f=0, k_f=0.5))
-            slip_tendency.append(tau_n/s_nn)
-            dilation_tendency.append((s1-s_nn)/(s1-s3))
-            fracture_susceptibility.append(s_nn - tau_n/mu_fracture)
+            # x, y = plane2xy(stress_on_plane.plane)
+            x, y = None, None
+            if stress_on_plane:
+                s_nn = stress_on_plane.s_nn
+                s_nm = stress_on_plane.s_nm
+                s_nt = stress_on_plane.s_nt
+                tau_n = stress_on_plane.tau_n
+                xx.append(x)
+                yy.append(y)
+                taus.append(stress_on_plane.tau_n)
+                snns.append(stress_on_plane.s_nn)
+                taus_reduced.append(stress_on_plane.tau_n_reduced)
+                snns_reduced.append(stress_on_plane.s_nn_reduced)
+                fracture_criteria.append(fracture_criteria_reduced(stress_on_plane, tau_f=0, k_f=0.5))
+                slip_tendency.append(tau_n/s_nn)
+                dilation_tendency.append((s1-s_nn)/(s1-s3))
+                fracture_susceptibility.append(s_nn - tau_n/mu_fracture)
+            else:
+                xx.append(0)
+                yy.append(0)
+                taus.append(0)
+                snns.append(0)
+                taus_reduced.append(0)
+                snns_reduced.append(0)
+                fracture_criteria.append(0)
+                slip_tendency.append(0)
+                dilation_tendency.append(0)
+                fracture_susceptibility.append(0)
+
         return xx, yy, taus, snns, taus_reduced, snns_reduced, slip_tendency, dilation_tendency, fracture_susceptibility, fracture_criteria
 
     def prepare_controls(self):
@@ -113,9 +130,18 @@ class Plot:
         self.prepare_everything(stresses_on_plane, None, stress_state)
         # self.replot(stresses_on_plane, stresses_on_fractures=None, stress_state=stress_state, init_figs=False)
         self.update_morh()
+        self.update_stereo()
 
-        # self.fig.canvas.draw_idle()
+        self.fig.canvas.draw_idle()
         self.fig_morh.canvas.draw_idle()
+
+
+    def update_countourf(self, z, im):
+        z = np.array(z).reshape(self.gui_array_resolution)
+        im.set_data(z)
+
+    def update_stereo(self):
+        self.update_countourf(self.snns_reduced, self.snn_cont)
 
     def update_morh(self):
         self.morh_scatter.set_offsets(np.c_[self.snns,self.taus])
@@ -177,7 +203,9 @@ class Plot:
 
     def draw_stereonet(self, z, ax, title, colormap=None, levels=None, directions=None):
 
-        p = ax.contourf(*interp(self.xx, self.yy, z), cmap=colormap or 'Oranges', levels=levels)
+        # p = ax.contourf(*interp(self.xx, self.yy, z), cmap=colormap or 'Oranges', levels=levels)
+
+        p = ax.imshow(np.array(z).reshape(self.gui_array_resolution), cmap=colormap or 'Oranges', extent=[-1, 1, -1, 1])
         ax.set_aspect('equal', 'box')
         ax.set_title(title)
         ax.axis('off')

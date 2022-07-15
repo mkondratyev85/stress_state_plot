@@ -17,7 +17,7 @@ def recalculate_stress(mu_sigma: float = 0):
             'p': 40,
             },
     )
-    stresses_on_plane = calculate_stress_on_planes(stress_state, dir_step=20, dip_step=10)
+    stresses_on_plane = calculate_stress_on_planes(stress_state, resolution=30)
     return stress_state, stresses_on_plane
 
 def gui(stress_state: StressState):

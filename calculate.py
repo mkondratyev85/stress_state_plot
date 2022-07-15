@@ -1,9 +1,11 @@
 from math import tan, sin, cos, radians, atan2, degrees
 from dataclasses import dataclass
 
+import numpy as np
 from rich.progress import track
 
-from plane import Plane
+from plane import Plane, xy2plane
+from entities import StressState
 
 
 
@@ -126,12 +128,32 @@ def calculate_stress(plane, stress_state):
         )
 
 
-def calculate_stress_on_planes(stress_state, dir_step: int = 2, dip_step: int = 1):
+def calculate_stress_on_planes2(stress_state, dir_step: int = 2, dip_step: int = 1):
+    # calculate_stresses_on_planes(stress_state)
     stresses_on_plane = []
 
     for dr in track(range(0, 361, dir_step)):
         for dp in range(0, 91, dip_step):
             stresses_on_plane.append(calculate_stress(Plane(dr, dp), stress_state))
+
+    return stresses_on_plane
+
+def generate_grid_of_planes(resolution:int):
+    for x in np.linspace(-1., 1., resolution):
+        for y in np.linspace(-1, 1., resolution):
+            try:
+                yield xy2plane(x, y)
+            except ValueError:
+                yield None
+
+def calculate_stress_on_planes(stress_state: StressState, resolution:int = 10):
+    stresses_on_plane = []
+    
+    for plane in generate_grid_of_planes(resolution=resolution):
+        if plane:
+            stresses_on_plane.append(calculate_stress(plane, stress_state))
+        else:
+            stresses_on_plane.append(None)
 
     return stresses_on_plane
 
