@@ -126,11 +126,11 @@ def calculate_stress(plane, stress_state):
         )
 
 
-def calculate_stress_on_planes(stress_state):
+def calculate_stress_on_planes(stress_state, dir_step: int = 2, dip_step: int = 1):
     stresses_on_plane = []
 
-    for dr in track(range(0, 361, 2)):
-        for dp in range(0, 91, 1):
+    for dr in track(range(0, 361, dir_step)):
+        for dp in range(0, 91, dip_step):
             stresses_on_plane.append(calculate_stress(Plane(dr, dp), stress_state))
 
     return stresses_on_plane

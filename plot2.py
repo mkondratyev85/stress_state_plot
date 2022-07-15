@@ -5,6 +5,8 @@ from scipy.interpolate import griddata
 from plane import plane2xy
 from calculate import fracture_criteria_reduced
 
+from matplotlib.widgets import Slider, Button
+
 def interp(pointx, pointy, values):
     x = np.linspace(-1, 1, 500)
     y =  np.linspace(-1, 1, 500)
@@ -15,18 +17,30 @@ def interp(pointx, pointy, values):
 
 class Plot:
 
+    output = None
+    output_morh = None
+    gui_update_func = None
 
-    def __call__(self, stresses_on_plane, stress_state, output, stresses_on_fractures=None):
+    def __call__(self, stresses_on_plane, stress_state, output=None, stresses_on_fractures=None, gui=False, gui_update_func=None):
+        if output:
+            self.output = output
+            self.output_morh = output[:-4] + "_morh.jpg"
+        self.replot(stresses_on_plane, stresses_on_fractures, stress_state)
+        if gui:
+            self.gui_update_func = gui_update_func
+            self.prepare_controls()
+            plt.plot()
+
+
+    def replot(self, stresses_on_plane, stresses_on_fractures, stress_state, init_figs=True):
+        self.prepare_everything(stresses_on_plane, stresses_on_fractures, stress_state)
+        self.plot_stereo(init_figs)
+        self.plot_morh(init_figs)
+
+    def prepare_everything(self, stresses_on_plane, stresses_on_fractures, stress_state):
         self.stresses_on_plane = stresses_on_plane
         self.stresses_on_fractures = stresses_on_fractures
         self.stress_state = stress_state
-        self.output = output
-        self.output_morh = output[:-4] + "_morh.jpg"
-        self.prepare_everything()
-        self.plot_stereo()
-        self.plot_morh()
-
-    def prepare_everything(self):
         (self.xx, self.yy, self.taus, self.snns, self.taus_reduced, self.snns_reduced, 
             self.slip_tendency, self.dilation_tendency, self.fracture_susceptibility, self.fracture_criteria) = \
             self.prepare_lists_of_data(mu_fracture=0.5, planes=self.stresses_on_plane)
@@ -78,16 +92,39 @@ class Plot:
             fracture_susceptibility.append(s_nn - tau_n/mu_fracture)
         return xx, yy, taus, snns, taus_reduced, snns_reduced, slip_tendency, dilation_tendency, fracture_susceptibility, fracture_criteria
 
-    def plot_morh(self):
-        self.fig, axs = plt.subplots(1, 2, dpi=300, figsize=(12,6))
+    def prepare_controls(self):
+        self.fig_controls, axs_controls = plt.subplots(2, 3, dpi=300, figsize=(12,6))
 
-        axs[0].scatter(self.snns, self.taus)
-        axs[0].set_aspect('equal', 'box')
-        axs[0].set_title("Morh diagram")
-        axs[0].set_xlabel(r"$\sigma_{nn}$")
-        axs[0].set_ylabel(r"$\tau_{n}$")
+        self.slider_mu_sigma = Slider(
+            ax=axs_controls[0,0],
+            label="Amplitude",
+            valmin=-1,
+            valmax=1,
+            valinit=0,
+            orientation="horizontal"
+        )
+        self.slider_mu_sigma.on_changed(self.update_plot)
+
+        plt.show()
+
+    def update_plot(self, val):
+        mu_s = self.slider_mu_sigma.val
+        stress_state, stresses_on_plane = self.gui_update_func(mu_s)
+        self.replot(stresses_on_plane, stresses_on_fractures=None, stress_state=stress_state, init_figs=False)
+
+        self.fig.canvas.draw_idle()
+
+    def plot_morh(self, init_figs=True):
+        if init_figs:
+            self.fig_morh, self.morh_axs = plt.subplots(1, 2, dpi=300, figsize=(12,6))
+
+        self.morh_axs[0].scatter(self.snns, self.taus)
+        self.morh_axs[0].set_aspect('equal', 'box')
+        self.morh_axs[0].set_title("Morh diagram")
+        self.morh_axs[0].set_xlabel(r"$\sigma_{nn}$")
+        self.morh_axs[0].set_ylabel(r"$\tau_{n}$")
         if self.fractures_xx and self.fractures_yy:
-            axs[0].scatter(self.fracture_snns, self.fracture_taus, marker="+", color='black')
+            self.morh_axs[0].scatter(self.fracture_snns, self.fracture_taus, marker="+", color='black')
 
         tau_f = 0
         k_f = 0.8
@@ -96,37 +133,40 @@ class Plot:
         x2 = (y2 - tau_f) / k_f
 
 
-        axs[1].scatter(self.snns_reduced, self.taus_reduced)
-        axs[1].set_aspect('equal', 'box')
-        axs[1].set_title("Morh diagram in reduced stress")
-        axs[1].set_xlabel(r"$\sigma_{nn}$")
-        axs[1].set_ylabel(r"$\tau_{n}$")
+        self.morh_axs[1].scatter(self.snns_reduced, self.taus_reduced)
+        self.morh_axs[1].set_aspect('equal', 'box')
+        self.morh_axs[1].set_title("Morh diagram in reduced stress")
+        self.morh_axs[1].set_xlabel(r"$\sigma_{nn}$")
+        # self.morh_axs[1].set_ylabel(r"$\tau_{n}$")
         if self.fractures_xx and self.fractures_yy:
-            axs[1].scatter(self.fracture_snns_reduced, self.fracture_taus_reduced, marker="+", color='black')
-        axs[1].plot((x1, x2),(y1, y2), color='red')
+            self.morh_axs[1].scatter(self.fracture_snns_reduced, self.fracture_taus_reduced, marker="+", color='black')
+        self.morh_axs[1].plot((x1, x2),(y1, y2), color='red')
 
-        self.fig.suptitle(r'$\mu_s$ = %.2f, $\phi$ = %.2f' % (self.stress_state.values.mu_s, self.stress_state.values.phi), fontsize=16)
-        self.fig.tight_layout()
+        self.fig_morh.suptitle(r'$\mu_s$ = %.2f, $\phi$ = %.2f' % (self.stress_state.values.mu_s, self.stress_state.values.phi), fontsize=16)
+        self.fig_morh.tight_layout()
 
-        plt.savefig(self.output_morh)
+        if self.output_morh:
+            plt.savefig(self.output_morh)
 
 
-    def plot_stereo(self):
-        self.fig, axs = plt.subplots(2, 3, dpi=300, figsize=(12,6))
+    def plot_stereo(self, init_figs=True):
+        if init_figs:
+            self.fig, self.fig_axs = plt.subplots(2, 3, dpi=300, figsize=(12,6))
 
-        self.draw_stereonet(self.snns_reduced, ax=axs[0, 1], title=r'$\sigma_{nn}$')
-        self.draw_stereonet(self.taus_reduced, ax=axs[0, 2], title=r'$\tau_{n}$')
-        self.draw_stereonet(self.slip_tendency, ax=axs[1, 0], title='Slip Tendency')
-        self.draw_stereonet(self.dilation_tendency, ax=axs[1, 1], title='Dilation Tendency')
-        self.draw_stereonet(self.fracture_susceptibility, ax=axs[1, 2], title='Fracture Susceptibility')
-        self.draw_stereonet(self.fracture_criteria, ax=axs[0, 0], title='Fracture Susceptibility')
+        self.draw_stereonet(self.snns_reduced, ax=self.fig_axs[0, 1], title=r'$\sigma_{nn}$')
+        self.draw_stereonet(self.taus_reduced, ax=self.fig_axs[0, 2], title=r'$\tau_{n}$')
+        self.draw_stereonet(self.slip_tendency, ax=self.fig_axs[1, 0], title='Slip Tendency')
+        self.draw_stereonet(self.dilation_tendency, ax=self.fig_axs[1, 1], title='Dilation Tendency')
+        self.draw_stereonet(self.fracture_susceptibility, ax=self.fig_axs[1, 2], title='Fracture Susceptibility')
+        self.draw_stereonet(self.fracture_criteria, ax=self.fig_axs[0, 0], title='Fracture Susceptibility')
         # draw_stereonet(x, y, phis, axs[2, 0], r'$\phi$', colormap='hsv', levels=180)
 
 
         self.fig.suptitle(r'$\mu_s$ = %.2f, $\phi$ = %.2f' % (self.stress_state.values.mu_s, self.stress_state.values.phi), fontsize=16)
         self.fig.tight_layout()
 
-        plt.savefig(self.output)
+        if self.output:
+            plt.savefig(self.output)
 
     def draw_stereonet(self, z, ax, title, colormap=None, levels=None, directions=None):
 
@@ -149,6 +189,6 @@ class Plot:
                 ax.scatter(x1, y1, marker="o", color='black')
 
         ax.add_patch(stereonet_border)
-        self.fig.colorbar(p, ax=ax, spacing='proportional')
+        # self.fig.colorbar(p, ax=ax, spacing='proportional')
 
 plot = Plot()
