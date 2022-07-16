@@ -146,10 +146,12 @@ def generate_grid_of_planes(resolution:int):
             except ValueError:
                 yield None
 
-def calculate_stress_on_planes(stress_state: StressState, resolution:int = 10):
+def calculate_stress_on_planes(stress_state: StressState, resolution:int = 10, planes = None):
     stresses_on_plane = []
     
-    for plane in generate_grid_of_planes(resolution=resolution):
+    if not planes:
+        planes = list(generate_grid_of_planes(resolution=resolution))
+    for plane in planes:
         if plane:
             stresses_on_plane.append(calculate_stress(plane, stress_state))
         else:
@@ -161,7 +163,10 @@ def calculate_stresses_on_fractures(stress_state, fractures):
     stresses_on_fractures = []
 
     for fracture in fractures:
-        stresses_on_fractures.append(calculate_stress(fracture.normal(), stress_state))
+        if fracture:
+            stresses_on_fractures.append(calculate_stress(fracture.normal(), stress_state))
+        else:
+            stresses_on_fractures.append(None)
 
     return stresses_on_fractures
 

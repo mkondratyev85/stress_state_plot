@@ -41,17 +41,20 @@ class Morh:
 
         if file_with_fractures:
             fractures = load_fractures(file_with_fractures)
+
+        if gui_flag:
+            gui(stress_state, fractures=fractures)
+            return
+
+        if file_with_fractures:
             stresses_on_fractures = calculate_stresses_on_fractures(stress_state, fractures)
         else:
             fractures = None
             stresses_on_fractures = None
         print(stress_state)
 
-        if gui_flag:
-            gui(stress_state)
-            return
 
-        stresses_on_plane = calculate_stress_on_planes(stress_state, resolution = 15)
+        stresses_on_plane = calculate_stress_on_planes(stress_state, resolution=41)
 
 
         if png_path:
