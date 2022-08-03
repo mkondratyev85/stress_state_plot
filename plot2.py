@@ -6,6 +6,8 @@ from scipy.interpolate import griddata
 from plane import plane2xy
 from calculate import fracture_criteria_reduced
 from entities import StressState
+import matplotlib.colors as colors
+import matplotlib
 
 
 
@@ -351,10 +353,14 @@ class Plot:
         self.fig, self.fig_axs = plt.subplots(2, 3, dpi=100, figsize=(18, 9))
 
         self.snn_cont = self.draw_stereonet(
-            self.snns_reduced, ax=self.fig_axs[0, 1], title=r"$\sigma_{nn}$"
+            self.snns_reduced, ax=self.fig_axs[0, 1], title=r"$\sigma_{nn}$",
+            colormap="PuOr",
+            norm_zero=True,
         )
         self.taus_cont = self.draw_stereonet(
-            self.taus_reduced, ax=self.fig_axs[0, 2], title=r"$\tau_{n}$"
+            self.taus_reduced, ax=self.fig_axs[0, 2], title=r"$\tau_{n}$",
+            colormap="Oranges",
+            norm_zero=False,
         )
 
         self.morh_reduced_scatter, self.fracture_reduced_scatter = self.plot_single_morh(
@@ -408,13 +414,14 @@ class Plot:
         if self.output:
             plt.savefig(self.output)
 
-    def draw_stereonet(self, z, ax, title, colormap=None, levels=None, directions=None):
+    def draw_stereonet(self, z, ax, title, colormap=None, levels=None, directions=None, norm_zero=True):
 
         # p = ax.contourf(*interp(self.xx, self.yy, z), cmap=colormap or 'Oranges', levels=levels)
 
         p = ax.imshow(
             self.reshape_for_imshow(z),
-            cmap=colormap or "Oranges",
+            cmap=colormap or "PuOr",
+            norm=None if not norm_zero else colors.CenteredNorm(),
             extent=[-1, 1, -1, 1],
         )
         ax.set_aspect("equal", "box")
@@ -426,7 +433,6 @@ class Plot:
         s3 = ax.scatter(*plane2xy(self.sigma3), marker="^", color="red")
         t1 = ax.text(*plane2xy(self.sigma1), r"$\sigma1$", fontsize=10)
         t3 = ax.text(*plane2xy(self.sigma3), r"$\sigma3$", fontsize=10)
-        f = None
         if self.fractures_xx and self.fractures_yy:
             ax.scatter(self.fractures_xx, self.fractures_yy, marker="+", color="black")
 
@@ -436,7 +442,7 @@ class Plot:
                 ax.scatter(x1, y1, marker="o", color="black")
 
         ax.add_patch(stereonet_border)
-        # self.fig.colorbar(p, ax=ax, spacing='proportional')
+        self.fig.colorbar(p, ax=ax, spacing='proportional')
         return p, s1, s2, s3, t1, t3
 
 
