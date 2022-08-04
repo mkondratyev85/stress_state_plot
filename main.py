@@ -5,6 +5,7 @@ from plot2 import plot
 from entities import StressState
 from load_from_file import load_fractures
 from save_to_xlsx import save_to_xlsx
+from gui import gui
 
 
 
@@ -36,17 +37,23 @@ def parse_sigma_and_direction(sigma_and_direction):
 
 class Morh:
 
-    def __call__(self, stress_state, file_with_fractures, xlsx_path, png_path):
+    def __call__(self, stress_state, file_with_fractures, xlsx_path, png_path, gui_flag=False):
 
         if file_with_fractures:
             fractures = load_fractures(file_with_fractures)
+
+        if gui_flag:
+            gui(stress_state, fractures=fractures)
+            return
+
+        if file_with_fractures:
             stresses_on_fractures = calculate_stresses_on_fractures(stress_state, fractures)
         else:
             fractures = None
             stresses_on_fractures = None
-        print(stress_state)
 
-        stresses_on_plane = calculate_stress_on_planes(stress_state)
+        stresses_on_plane = calculate_stress_on_planes(stress_state, resolution=41 if gui_flag else 91)
+
 
         if png_path:
             plot(stresses_on_plane, stress_state, stresses_on_fractures=stresses_on_fractures, output=png_path)
@@ -75,10 +82,11 @@ f = Morh()
 @click.option('--fractures', help='Path to the input file with fractures.')
 @click.option('--xlsx_path', help='Path to the output xlsx file with report.')
 @click.option('--png_path', help='Path to the output xlsx file with report.')
+@click.option('--gui', help='Plots stress in interactive GUI.', is_flag=True)
 def run(pressure, tau, mu_sigma, phi, sigma1_value, sigma2_value, sigma3_value, 
         sigma1_orientation, sigma2_orientation, sigma3_orientation, 
         sigma1_orientation_and_sigma3_direction, sigma3_orientation_and_sigma1_direction, 
-        fractures, xlsx_path, png_path):
+        fractures, xlsx_path, png_path, gui):
     try:
         stress_state = StressState(
             orientations = {
@@ -102,7 +110,7 @@ def run(pressure, tau, mu_sigma, phi, sigma1_value, sigma2_value, sigma3_value,
         click.echo(e, err=True)
         return
 
-    f(stress_state=stress_state, file_with_fractures=fractures, xlsx_path=xlsx_path, png_path=png_path)
+    f(stress_state=stress_state, file_with_fractures=fractures, xlsx_path=xlsx_path, png_path=png_path, gui_flag=gui)
 
 
 if __name__ == '__main__':
