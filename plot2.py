@@ -10,7 +10,6 @@ import matplotlib.colors as colors
 import matplotlib
 
 
-
 def interp(pointx, pointy, values):
     x = np.linspace(-1, 1, 500)
     y = np.linspace(-1, 1, 500)
@@ -94,7 +93,8 @@ class Plot:
                 _,
                 _,
             ) = self.prepare_lists_of_data(
-                mu_fracture=0.5, planes=self.stresses_on_fractures,
+                mu_fracture=0.5,
+                planes=self.stresses_on_fractures,
                 fractures=True,
             )
 
@@ -140,16 +140,16 @@ class Plot:
                 dilation_tendency.append((s1 - s_nn) / (s1 - s3))
                 fracture_susceptibility.append(s_nn - tau_n / mu_fracture)
             else:
-                xx.append(0)
-                yy.append(0)
-                taus.append(0)
-                snns.append(0)
-                taus_reduced.append(0)
-                snns_reduced.append(0)
-                fracture_criteria.append(0)
-                slip_tendency.append(0)
-                dilation_tendency.append(0)
-                fracture_susceptibility.append(0)
+                xx.append(np.nan)
+                yy.append(np.nan)
+                taus.append(np.nan)
+                snns.append(np.nan)
+                taus_reduced.append(np.nan)
+                snns_reduced.append(np.nan)
+                fracture_criteria.append(np.nan)
+                slip_tendency.append(np.nan)
+                dilation_tendency.append(np.nan)
+                fracture_susceptibility.append(np.nan)
 
         return (
             xx,
@@ -233,27 +233,27 @@ class Plot:
     def update_plot(self, val):
         stress_state = StressState(
             orientations={
-                'sigma1_sigma3': (
+                "sigma1_sigma3": (
                     self.slider_sigma1_dir.val,
                     self.slider_sigma1_dip.val,
                     self.slider_sigma3_dir.val,
-                    )
-                },
+                )
+            },
             values={
-                'tau': self.slider_tau.val,
-                'mu_s': self.slider_mu_sigma.val,
-                'p': self.slider_p.val,
-                },
+                "tau": self.slider_tau.val,
+                "mu_s": self.slider_mu_sigma.val,
+                "p": self.slider_p.val,
+            },
         )
         stresses_on_plane = self.gui_update_func(
             stress_state=stress_state,
             planes=self.planes,
-            )
+        )
         if self.fractures:
             stresses_on_fractures = self.gui_update_func(
                 stress_state=stress_state,
                 planes=self.fractures,
-                )
+            )
         else:
             stresses_on_fractures = None
         self.prepare_everything(stresses_on_plane, stresses_on_fractures, stress_state)
@@ -267,7 +267,7 @@ class Plot:
         return np.fliplr(np.flipud(z.T))
 
     def update_countourf(self, z, im, stress_state):
-        im, s1, s2, s3, t1, t3  = im
+        im, s1, s2, s3, t1, t3 = im
         im.set_data(self.reshape_for_imshow(z))
 
         x, y = plane2xy(stress_state.orientation.sigma1)
@@ -281,7 +281,6 @@ class Plot:
         s3.set_offsets(np.c_[x, y])
         t3.set_position((x, y))
 
-
     def update_stereo(self, stress_state):
         self.update_countourf(self.snns_reduced, self.snn_cont, stress_state)
         self.update_countourf(self.taus_reduced, self.taus_cont, stress_state)
@@ -292,11 +291,11 @@ class Plot:
         )
 
         self.fracture_reduced_scatter.set_offsets(
-            np.c_[self.fracture_snns_reduced,
-                  self.fracture_taus_reduced,
-                 ]
+            np.c_[
+                self.fracture_snns_reduced,
+                self.fracture_taus_reduced,
+            ]
         )
-
 
     def plot_single_morh(
         self, ax, x, y, title="Morh diagram in reduced stress", plot_line=False
@@ -353,17 +352,24 @@ class Plot:
         self.fig, self.fig_axs = plt.subplots(2, 3, dpi=100, figsize=(18, 9))
 
         self.snn_cont = self.draw_stereonet(
-            self.snns_reduced, ax=self.fig_axs[0, 1], title=r"$\sigma_{nn}$",
+            self.snns_reduced,
+            ax=self.fig_axs[0, 1],
+            title=r"$\sigma_{nn}$",
             colormap="PuOr",
             norm_zero=True,
         )
         self.taus_cont = self.draw_stereonet(
-            self.taus_reduced, ax=self.fig_axs[0, 2], title=r"$\tau_{n}$",
+            self.taus_reduced,
+            ax=self.fig_axs[0, 2],
+            title=r"$\tau_{n}$",
             colormap="Oranges",
             norm_zero=False,
         )
 
-        self.morh_reduced_scatter, self.fracture_reduced_scatter = self.plot_single_morh(
+        (
+            self.morh_reduced_scatter,
+            self.fracture_reduced_scatter,
+        ) = self.plot_single_morh(
             self.fig_axs[1, 1],
             self.snns_reduced,
             self.taus_reduced,
@@ -371,8 +377,8 @@ class Plot:
             plot_line=True,
         )
 
-        self.fig.delaxes(self.fig_axs[0,0])
-        self.fig.delaxes(self.fig_axs[1,0])
+        self.fig.delaxes(self.fig_axs[0, 0])
+        self.fig.delaxes(self.fig_axs[1, 0])
 
         self.fig.tight_layout()
 
@@ -380,26 +386,48 @@ class Plot:
         self.fig, self.fig_axs = plt.subplots(2, 3, dpi=300, figsize=(12, 6))
 
         self.snn_cont = self.draw_stereonet(
-            self.snns_reduced, ax=self.fig_axs[0, 1], title=r"$\sigma_{nn}$"
+            self.snns_reduced, ax=self.fig_axs[0, 1], title=r"$\sigma_{nn}$",
+            use_contourf=True,
         )
         self.taus_cont = self.draw_stereonet(
-            self.taus_reduced, ax=self.fig_axs[0, 2], title=r"$\tau_{n}$"
+            self.taus_reduced,
+            ax=self.fig_axs[0, 2],
+            title=r"$\tau_{n}$",
+            colormap="Oranges",
+            norm_zero=False,
+            use_contourf=True,
         )
         self.slip_cont = self.draw_stereonet(
-            self.slip_tendency, ax=self.fig_axs[1, 0], title="Slip Tendency"
+            self.slip_tendency,
+            ax=self.fig_axs[1, 0],
+            title="Slip Tendency",
+            colormap="Oranges",
+            norm_zero=False,
+            use_contourf=True,
         )
         self.dilation_cont = self.draw_stereonet(
-            self.dilation_tendency, ax=self.fig_axs[1, 1], title="Dilation Tendency"
+            self.dilation_tendency,
+            ax=self.fig_axs[1, 1],
+            title="Dilation Tendency",
+            colormap="Oranges",
+            norm_zero=False,
+            use_contourf=True,
         )
         self.fs_cont = self.draw_stereonet(
             self.fracture_susceptibility,
             ax=self.fig_axs[1, 2],
             title="Fracture Susceptibility",
+            colormap="Oranges",
+            norm_zero=False,
+            use_contourf=True,
         )
         self.fc = self.draw_stereonet(
             self.fracture_criteria,
             ax=self.fig_axs[0, 0],
             title="Fracture Susceptibility",
+            colormap="Oranges",
+            norm_zero=False,
+            use_contourf=True,
         )
         # draw_stereonet(x, y, phis, axs[2, 0], r'$\phi$', colormap='hsv', levels=180)
 
@@ -414,16 +442,36 @@ class Plot:
         if self.output:
             plt.savefig(self.output)
 
-    def draw_stereonet(self, z, ax, title, colormap=None, levels=None, directions=None, norm_zero=True):
+    def draw_stereonet(
+        self,
+        z,
+        ax,
+        title,
+        colormap=None,
+        levels=None,
+        directions=None,
+        norm_zero=True,
+        use_contourf=False,
+    ):
 
-        # p = ax.contourf(*interp(self.xx, self.yy, z), cmap=colormap or 'Oranges', levels=levels)
+        cmap = colormap or "PuOr"
+        array = self.reshape_for_imshow(z)
 
-        p = ax.imshow(
-            self.reshape_for_imshow(z),
-            cmap=colormap or "PuOr",
-            norm=None if not norm_zero else colors.CenteredNorm(),
-            extent=[-1, 1, -1, 1],
-        )
+        if use_contourf:
+            splot = ax.contourf(
+                array,
+                cmap=cmap,
+                levels=levels,
+                norm=None if not norm_zero else colors.CenteredNorm(),
+                extent=[-1, 1, -1, 1],
+            )
+        else:
+            splot = ax.imshow(
+                array,
+                cmap,
+                norm=None if not norm_zero else colors.CenteredNorm(),
+                extent=[-1, 1, -1, 1],
+            )
         ax.set_aspect("equal", "box")
         ax.set_title(title)
         ax.axis("off")
@@ -442,8 +490,8 @@ class Plot:
                 ax.scatter(x1, y1, marker="o", color="black")
 
         ax.add_patch(stereonet_border)
-        self.fig.colorbar(p, ax=ax, spacing='proportional')
-        return p, s1, s2, s3, t1, t3
+        self.fig.colorbar(splot, ax=ax, spacing="proportional")
+        return splot, s1, s2, s3, t1, t3
 
 
 plot = Plot()

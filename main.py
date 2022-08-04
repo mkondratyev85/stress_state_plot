@@ -51,10 +51,8 @@ class Morh:
         else:
             fractures = None
             stresses_on_fractures = None
-        print(stress_state)
 
-
-        stresses_on_plane = calculate_stress_on_planes(stress_state, resolution=41)
+        stresses_on_plane = calculate_stress_on_planes(stress_state, resolution=41 if gui_flag else 91)
 
 
         if png_path:
