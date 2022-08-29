@@ -181,7 +181,6 @@ def calculate_stress_on_planes(
         else:
             stresses_on_plane.append(None)
 
-    print(stresses_on_plane)
     return stresses_on_plane
 
 
