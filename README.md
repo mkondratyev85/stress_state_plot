@@ -22,5 +22,5 @@ Example of usage in interactive mode:
 python main.py --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --fractures=fractures.txt --gui
 ```
 
-<img src="figs/interactive_screencast.webm" width="640" />
+<img src="figs/interactive.gif" width="640" />
 
