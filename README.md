@@ -1,5 +1,14 @@
 # stress_state_plot
 
+`Stress_state_plot` is an open source structural geology package for visualisation of a given stess-state via matplotlib.
+
+Stress state can be described by orientation of sigma axes, as well as either absolute values for each sigma axis. 
+An alternative method is the describe stress state by orientation of sigma axes and by providing additional parameters such as `pressure`, `tau`, and `mu_sigma` or `phi`.
+
+Visualisation of stress_state is performed both on stereonet and on a Morh's diagram.
+
+<img src="figs/fig.png" width="640" />
+
 
 ## Installation
 
