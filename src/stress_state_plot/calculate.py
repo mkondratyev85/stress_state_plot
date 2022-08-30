@@ -4,8 +4,8 @@ from dataclasses import dataclass
 import numpy as np
 from rich.progress import track
 
-from plane import Plane, xy2plane
-from entities import StressState
+from .plane import Plane, xy2plane
+from .entities import StressState
 
 
 @dataclass

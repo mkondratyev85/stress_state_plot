@@ -5,10 +5,14 @@
 
 ### Ubuntu
 
+```
+pip install git+https://github.com/mkondratyev85/stress_state_plot
+```
+
 ## Usage
 
 ```
-Usage: main.py [OPTIONS]
+Usage: stress_state_plot [OPTIONS]
 
 Options:
   --pressure FLOAT                Value of pressure.
@@ -38,13 +42,13 @@ Options:
 Example of usage:
 
 ```
-python main.py --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --png_path=/tmp/fig.png
+stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --png_path=/tmp/fig.png
 ```
 
 It is possible to plot set of fractures against given stress state:
 
 ```
-python main.py --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --fractures=fractures.txt --png_path=/tmp/fig.png
+stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --fractures=fractures.txt --png_path=/tmp/fig.png
 ```
 
 <img src="figs/fig.png" width="640" />
@@ -54,7 +58,7 @@ python main.py --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure
 Example of usage in interactive mode:
 
 ```
-python main.py --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --fractures=fractures.txt --gui
+stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --fractures=fractures.txt --gui
 ```
 
 <img src="figs/interactive.gif" width="640" />

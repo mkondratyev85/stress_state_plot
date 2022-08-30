@@ -1,11 +1,11 @@
 import click
 
-from calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
-from plot2 import plot
-from entities import StressState
-from load_from_file import load_fractures
-from save_to_xlsx import save_to_xlsx
-from gui import gui
+from .calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
+from .plot2 import plot
+from .entities import StressState
+from .load_from_file import load_fractures
+from .save_to_xlsx import save_to_xlsx
+from .gui import gui
 
 
 

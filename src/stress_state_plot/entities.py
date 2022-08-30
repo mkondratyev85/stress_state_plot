@@ -4,7 +4,7 @@
 `sigma_i` - Intermediate
 """
 
-from plane import Plane
+from .plane import Plane
 
 class StressStateValues:
 
