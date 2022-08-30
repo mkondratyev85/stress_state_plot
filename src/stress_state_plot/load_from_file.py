@@ -1,4 +1,4 @@
-from plane import Plane
+from .plane import Plane
 
 def parse_line(line):
     line = line.strip()

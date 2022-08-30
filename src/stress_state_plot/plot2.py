@@ -3,11 +3,10 @@ from matplotlib.widgets import Slider, Button
 import numpy as np
 from scipy.interpolate import griddata
 
-from plane import plane2xy
-from calculate import fracture_criteria_reduced
-from entities import StressState
+from .plane import plane2xy
+from .calculate import fracture_criteria_reduced
+from .entities import StressState
 import matplotlib.colors as colors
-import matplotlib
 
 
 def interp(pointx, pointy, values):
