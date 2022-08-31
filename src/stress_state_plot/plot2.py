@@ -29,6 +29,8 @@ class Plot:
         self,
         stresses_on_plane,
         stress_state,
+        k_f,
+        tau_f,
         output=None,
         stresses_on_fractures=None,
         gui=False,
@@ -36,9 +38,13 @@ class Plot:
     ):
         if output:
             self.output = output
-            self.output_morh = output[:-4] + "_morh.jpg"
+            self.output_morh = output[:-4] + "_morh.png"
         if gui:
             self.gui_update_func = gui_update_func
+
+        self.k_f = k_f
+        self.tau_f = tau_f
+
         shape = int(len(stresses_on_plane) ** 0.5)
         self.gui_array_resolution = (shape, shape)
         self.make_plot(stresses_on_plane, stresses_on_fractures, stress_state)
@@ -133,7 +139,7 @@ class Plot:
                 taus_reduced.append(stress_on_plane.tau_n_reduced)
                 snns_reduced.append(stress_on_plane.s_nn_reduced)
                 fracture_criteria.append(
-                    fracture_criteria_reduced(stress_on_plane, tau_f=0, k_f=0.5)
+                    fracture_criteria_reduced(stress_on_plane, tau_f=self.tau_f, k_f=self.k_f)
                 )
                 slip_tendency.append(tau_n / s_nn)
                 dilation_tendency.append((s1 - s_nn) / (s1 - s3))
@@ -227,9 +233,31 @@ class Plot:
         )
         self.slider_p.on_changed(self.update_plot)
 
+        self.slider_tau_f = Slider(
+            ax=plt.axes([0.05, 0.78, slider_width, slider_height]),
+            label=r"$\tau_f$",
+            valmin=0,
+            valmax=1,
+            valinit=self.tau_f,
+            orientation="horizontal",
+        )
+        self.slider_tau_f.on_changed(self.update_plot)
+
+        self.slider_k_f = Slider(
+            ax=plt.axes([0.05, 0.86, slider_width, slider_height]),
+            label=r"$k_f$",
+            valmin=0.01,
+            valmax=1,
+            valinit=self.k_f,
+            orientation="horizontal",
+        )
+        self.slider_k_f.on_changed(self.update_plot)
+
         plt.show()
 
     def update_plot(self, val):
+        self.k_f = self.slider_k_f.val
+        self.tau_f = self.slider_tau_f.val
         stress_state = StressState(
             orientations={
                 "sigma1_sigma3": (
@@ -283,6 +311,7 @@ class Plot:
     def update_stereo(self, stress_state):
         self.update_countourf(self.snns_reduced, self.snn_cont, stress_state)
         self.update_countourf(self.taus_reduced, self.taus_cont, stress_state)
+        self.update_countourf(self.fracture_criteria, self.fc, stress_state)
 
     def update_morh(self):
         self.morh_reduced_scatter.set_offsets(
@@ -296,6 +325,18 @@ class Plot:
             ]
         )
 
+        x1, x2, y1, y2 = self.get_morh_line_coordinates()
+        self.morh_line.set_ydata((y1, y2))
+        self.morh_line.set_xdata((x1, x2))
+
+    def get_morh_line_coordinates(self):
+        tau_f = self.tau_f
+        k_f = self.k_f
+        y1, y2 = 0, 1
+        x1 = (y1 - tau_f)/k_f
+        x2 = (y2 - tau_f)/k_f
+        return x1, x2, y1, y2
+ 
     def plot_single_morh(
         self, ax, x, y, title="Morh diagram in reduced stress", plot_line=False
     ):
@@ -304,6 +345,7 @@ class Plot:
         ax.set_title(title)
         ax.set_xlabel(r"$\sigma_{nn}$")
         ax.set_ylabel(r"$\tau_{n}$")
+        ax.set_xlim((-1.5, 1.5))
 
         fracture_scatter = None
         if self.fractures_xx and self.fractures_yy:
@@ -314,12 +356,8 @@ class Plot:
                 color="black",
             )
         if plot_line:
-            tau_f = 0
-            k_f = 0.8
-            y1, y2 = 0, 1
-            x1 = tau_f
-            x2 = (y2 - tau_f) / k_f
-            ax.plot((x1, x2), (y1, y2), color="red")
+            x1, x2, y1, y2 = self.get_morh_line_coordinates()
+            self.morh_line, = ax.plot((x1, x2), (y1, y2), color="red")
         return scatter, fracture_scatter
 
     def plot_morh(self, init_figs=True):
@@ -361,6 +399,14 @@ class Plot:
             self.taus_reduced,
             ax=self.fig_axs[0, 2],
             title=r"$\tau_{n}$",
+            colormap="Oranges",
+            norm_zero=False,
+        )
+
+        self.fc = self.draw_stereonet(
+            self.fracture_criteria,
+            ax=self.fig_axs[1, 2],
+            title="Fracture Criteria",
             colormap="Oranges",
             norm_zero=False,
         )
@@ -423,7 +469,7 @@ class Plot:
         self.fc = self.draw_stereonet(
             self.fracture_criteria,
             ax=self.fig_axs[0, 0],
-            title="Fracture Susceptibility",
+            title="Fracture Criteria",
             colormap="Oranges",
             norm_zero=False,
             use_contourf=True,
