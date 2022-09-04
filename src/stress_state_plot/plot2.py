@@ -498,6 +498,7 @@ class Plot:
         directions=None,
         norm_zero=True,
         use_contourf=False,
+        show_cbar=True,
     ):
 
         cmap = colormap or "PuOr"
@@ -505,6 +506,7 @@ class Plot:
 
         if cmap == "Binary":
             cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
+            show_cbar = False
 
         if use_contourf:
             splot = ax.contourf(
@@ -540,7 +542,8 @@ class Plot:
                 ax.scatter(x1, y1, marker="o", color="black")
 
         ax.add_patch(stereonet_border)
-        self.fig.colorbar(splot, ax=ax, spacing="proportional")
+        if show_cbar:
+            self.fig.colorbar(splot, ax=ax, spacing="proportional")
         return splot, s1, s2, s3, t1, t3
 
 

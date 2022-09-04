@@ -40,6 +40,8 @@ Options:
   --sigma3_orientation_and_sigma1_direction TEXT
                                   Set orientations only via single
                                   sigma3_orientationa and direction of sigma1
+  --tau_f FLOAT                   Cohesion factor
+  --k_f FLOAT                     Coefficient of friction
   --fractures TEXT                Path to the input file with fractures.
   --xlsx_path TEXT                Path to the output xlsx file with report.
   --png_path TEXT                 Path to the output xlsx file with report.
@@ -51,23 +53,23 @@ Options:
 Example of usage:
 
 ```
-stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --png_path=/tmp/fig.png
+stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --tau_f=0.3 --k_f=0.3 --png_path=/tmp/fig.png
 ```
 
 It is possible to plot set of fractures against given stress state:
 
 ```
-stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --fractures=fractures.txt --png_path=/tmp/fig.png
+stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --tau_f=0.3 --k_f=0.3 --fractures=fractures.txt --png_path=/tmp/fig.png
 ```
 
 <img src="figs/fig.png" width="640" />
 
-<img src="figs/fig_morh.jpg" width="640" />
+<img src="figs/fig_morh.png" width="640" />
 
 Example of usage in interactive mode:
 
 ```
-stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --fractures=fractures.txt --gui
+stress_state_plot --sigma1_orientation_and_sigma3_direction="125 34 322" --pressure=-40 --mu_sigma=0 --tau=1 --tau_f=0.3 --k_f=0.3 --fractures=fractures.txt --gui
 ```
 
 <img src="figs/interactive.gif" width="640" />
