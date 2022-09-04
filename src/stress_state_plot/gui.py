@@ -13,12 +13,9 @@ def recalculate_stress(stress_state, planes=None):
     return stresses_on_plane
 
 
-def gui(stress_state: StressState, k_f, tau_f, fractures=None):
+def gui(stress_state: StressState, k_f, tau_f, stresses_on_fractures=None):
     stresses_on_plane = recalculate_stress(stress_state)
-    if fractures:
-        stresses_on_fractures = recalculate_stress(stress_state, planes=fractures)
-    else:
-        stresses_on_fractures = None
+
     plot(
         stresses_on_plane,
         stress_state,

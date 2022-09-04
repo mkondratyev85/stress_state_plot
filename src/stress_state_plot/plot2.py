@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors
 from matplotlib.widgets import Slider, Button
 import numpy as np
 from scipy.interpolate import griddata
@@ -80,7 +81,7 @@ class Plot:
             self.dilation_tendency,
             self.fracture_susceptibility,
             self.fracture_criteria,
-        ) = self.prepare_lists_of_data(mu_fracture=0.5, planes=self.stresses_on_plane)
+        ) = self.prepare_lists_of_data(mu_fracture=self.k_f, planes=self.stresses_on_plane)
 
         self.fractures_xx = None
         self.fractures_yy = None
@@ -98,7 +99,7 @@ class Plot:
                 _,
                 _,
             ) = self.prepare_lists_of_data(
-                mu_fracture=0.5,
+                mu_fracture=self.k_f,
                 planes=self.stresses_on_fractures,
                 fractures=True,
             )
@@ -407,7 +408,7 @@ class Plot:
             self.fracture_criteria,
             ax=self.fig_axs[1, 2],
             title="Fracture Criteria",
-            colormap="Oranges",
+            colormap="Binary",
             norm_zero=False,
         )
 
@@ -470,7 +471,7 @@ class Plot:
             self.fracture_criteria,
             ax=self.fig_axs[0, 0],
             title="Fracture Criteria",
-            colormap="Oranges",
+            colormap="Binary",
             norm_zero=False,
             use_contourf=True,
         )
@@ -502,6 +503,9 @@ class Plot:
         cmap = colormap or "PuOr"
         array = self.reshape_for_imshow(z)
 
+        if cmap == "Binary":
+            cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
+
         if use_contourf:
             splot = ax.contourf(
                 array,
@@ -509,6 +513,7 @@ class Plot:
                 levels=levels,
                 norm=None if not norm_zero else colors.CenteredNorm(),
                 extent=[-1, 1, -1, 1],
+                origin="upper",
             )
         else:
             splot = ax.imshow(

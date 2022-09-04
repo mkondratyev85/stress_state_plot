@@ -1,11 +1,11 @@
 import click
 
-from .calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
-from .plot2 import plot
-from .entities import StressState
-from .load_from_file import load_fractures
-from .save_to_xlsx import save_to_xlsx
-from .gui import gui
+from stress_state_plot.calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
+from stress_state_plot.plot2 import plot
+from stress_state_plot.entities import StressState
+from stress_state_plot.load_from_file import load_fractures
+from stress_state_plot.save_to_xlsx import save_to_xlsx
+from stress_state_plot.gui import gui
 
 
 def parse_sigma_orientation(string_value):
@@ -51,18 +51,17 @@ class Morh:
 
         if file_with_fractures:
             fractures = load_fractures(file_with_fractures)
-
-        if gui_flag:
-            gui(stress_state, fractures=fractures, tau_f=tau_f, k_f=k_f)
-            return
-
-        if file_with_fractures:
             stresses_on_fractures = calculate_stresses_on_fractures(
                 stress_state, fractures
             )
         else:
             fractures = None
             stresses_on_fractures = None
+
+        if gui_flag:
+            gui(stress_state, stresses_on_fractures=stresses_on_fractures, tau_f=tau_f, k_f=k_f)
+            return
+
 
         stresses_on_plane = calculate_stress_on_planes(
             stress_state, resolution=41 if gui_flag else 91

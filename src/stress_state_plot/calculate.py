@@ -1,4 +1,4 @@
-from math import tan, sin, cos, radians, atan2, degrees
+from math import atan2, degrees
 from dataclasses import dataclass
 
 import numpy as np
@@ -201,6 +201,6 @@ def calculate_stresses_on_fractures(stress_state, fractures):
 def fracture_criteria_reduced(stress_on_plane, tau_f, k_f):
     s_nn = stress_on_plane.s_nn_reduced
     tau_n = stress_on_plane.tau_n_reduced
-    tau2 = tau_f - k_f * s_nn
+    tau2 = tau_n - k_f * s_nn
 
-    return 0 if tau_n > tau2 else 1
+    return 0 if tau_f > tau2 else 1
