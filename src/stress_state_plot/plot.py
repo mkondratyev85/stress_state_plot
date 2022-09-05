@@ -1,30 +1,164 @@
-import matplotlib.pyplot as plt
-import matplotlib.colors
-from matplotlib.widgets import Slider, Button
+"""Module for visualisation of stress state via matplotlib.
+"""
+
 import numpy as np
-from scipy.interpolate import griddata
+from numpy.typing import ArrayLike
+
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+from matplotlib import colors
+from matplotlib.text import Text
+from matplotlib.image import AxesImage
+from matplotlib.collections import PathCollection
+
 
 from .plane import plane2xy
 from .calculate import fracture_criteria_reduced
-from .entities import StressState
-import matplotlib.colors as colors
+from .entities import StressState, FrictionState
 
 
-def interp(pointx, pointy, values):
-    x = np.linspace(-1, 1, 500)
-    y = np.linspace(-1, 1, 500)
-    X, Y = np.meshgrid(x, y)
-    data = griddata((pointx, pointy), values, (X, Y), method="linear")
-    return X, Y, data
+class Morhplot:
+    def __init__(
+        self,
+        ax,
+        snn,
+        taus,
+        friction_state: FrictionState,
+        fractures_snns=None,
+        fractures_taus=None,
+        title="Morh diagram in reduced stress",
+        plot_line=False,
+    ):
+
+        self.scatter = ax.scatter(snn, taus)
+        ax.set_aspect("equal", "box")
+        ax.set_title(title)
+        ax.set_xlabel(r"$\sigma_{nn}$")
+        ax.set_ylabel(r"$\tau_{n}$")
+
+        if fractures_snns and fractures_taus:
+            self.fracture_scatter = ax.scatter(
+                fractures_snns,
+                fractures_taus,
+                marker="+",
+                color="black",
+            )
+        if plot_line:
+            ax.set_xlim((-1.5, 1.5))
+            x1, x2, y1, y2 = friction_state.get_morh_line_coordinates()
+            (self.morh_line,) = ax.plot((x1, x2), (y1, y2), color="red")
+
+    def update(self, snns, taus, fractures_snns, fractures_taus, friction_state: FrictionState):
+        self.scatter.set_offsets(np.c_[snns, taus])
+
+        if fractures_snns and fractures_taus:
+            self.fracture_scatter.set_offsets(
+                np.c_[fractures_snns, fractures_taus])
+
+        x1, x2, y1, y2 = friction_state.get_morh_line_coordinates()
+        self.morh_line.set_ydata((y1, y2))
+        self.morh_line.set_xdata((x1, x2))
+
+
+class Stereonet:
+    """Result of drawing stereonet."""
+
+    plot: AxesImage
+    s1: PathCollection
+    s2: PathCollection
+    s3: PathCollection
+    t1: Text
+    t3: Text
+
+    def __init__(
+        self,
+        array: ArrayLike,
+        stress_state: StressState,
+        ax,
+        title: str,
+        fractures_xx=None,
+        fractures_yy=None,
+        colormap=None,
+        levels=None,
+        directions=None,
+        norm_zero: bool = True,
+        use_contourf: bool = False,
+        show_cbar: bool = True,
+    ):
+        """Draw single stereonet plot."""
+
+        sigma1 = stress_state.orientation.sigma1
+        sigma2 = stress_state.orientation.sigma2
+        sigma3 = stress_state.orientation.sigma3
+
+        if use_contourf:
+            self.plot = ax.contourf(
+                array,
+                cmap=colormap,
+                levels=levels,
+                norm=None if not norm_zero else colors.CenteredNorm(),
+                extent=[-1, 1, -1, 1],
+                origin="upper",
+            )
+        else:
+            self.plot = ax.imshow(
+                array,
+                cmap=colormap,
+                norm=None if not norm_zero else colors.CenteredNorm(),
+                extent=[-1, 1, -1, 1],
+            )
+
+        ax.set_aspect("equal", "box")
+        ax.set_title(title)
+        ax.axis("off")
+        stereonet_border = plt.Circle((0, 0), 1, color="black", fill=False)
+
+        self.s1 = ax.scatter(*plane2xy(sigma1), marker="s", color="red")
+        self.s2 = ax.scatter(*plane2xy(sigma2), marker="o", color="red")
+        self.s3 = ax.scatter(*plane2xy(sigma3), marker="^", color="red")
+        self.t1 = ax.text(*plane2xy(sigma1), r"$\sigma1$", fontsize=10)
+        self.t3 = ax.text(*plane2xy(sigma3), r"$\sigma3$", fontsize=10)
+
+        if fractures_xx and fractures_yy:
+            ax.scatter(fractures_xx, fractures_yy, marker="+", color="black")
+
+        if directions:
+            for x1, y1, x2, y2 in zip(*directions):
+                ax.plot((x1, x2), (y1, y2), color="black")
+                ax.scatter(x1, y1, marker="o", color="black")
+
+        ax.add_patch(stereonet_border)
+        if show_cbar:
+            plt.colorbar(self.plot, ax=ax, spacing="proportional")
+
+    def update(self, array: ArrayLike, stress_state: StressState):
+        """Update plot for given stress_state and background array"""
+        self.plot.set_data(array)
+
+        x, y = plane2xy(stress_state.orientation.sigma1)
+        self.s1.set_offsets(np.c_[x, y])
+        self.t1.set_position((x, y))
+
+        x, y = plane2xy(stress_state.orientation.sigma2)
+        self.s2.set_offsets(np.c_[x, y])
+
+        x, y = plane2xy(stress_state.orientation.sigma3)
+        self.s3.set_offsets(np.c_[x, y])
+        self.t3.set_position((x, y))
 
 
 class Plot:
+    """
+    Visualisation of stress state in interactive and non-interactive mode.
+    """
 
     output = None
     output_morh = None
     gui_update_func = None
     gui_array_resolution = None
     fractures = None
+    k_f = None
+    tau_f = None
 
     def __call__(
         self,
@@ -81,7 +215,9 @@ class Plot:
             self.dilation_tendency,
             self.fracture_susceptibility,
             self.fracture_criteria,
-        ) = self.prepare_lists_of_data(mu_fracture=self.k_f, planes=self.stresses_on_plane)
+        ) = self.prepare_lists_of_data(
+            mu_fracture=self.k_f, planes=self.stresses_on_plane
+        )
 
         self.fractures_xx = None
         self.fractures_yy = None
@@ -140,7 +276,9 @@ class Plot:
                 taus_reduced.append(stress_on_plane.tau_n_reduced)
                 snns_reduced.append(stress_on_plane.s_nn_reduced)
                 fracture_criteria.append(
-                    fracture_criteria_reduced(stress_on_plane, tau_f=self.tau_f, k_f=self.k_f)
+                    fracture_criteria_reduced(
+                        stress_on_plane, tau_f=self.tau_f, k_f=self.k_f
+                    )
                 )
                 slip_tendency.append(tau_n / s_nn)
                 dilation_tendency.append((s1 - s_nn) / (s1 - s3))
@@ -285,106 +423,24 @@ class Plot:
         else:
             stresses_on_fractures = None
         self.prepare_everything(stresses_on_plane, stresses_on_fractures, stress_state)
-        self.update_morh()
-        self.update_stereo(stress_state)
+
+        self.snn_cont.update(self.reshape_for_imshow(self.snns_reduced), stress_state)
+        self.taus_cont.update(self.reshape_for_imshow(self.taus_reduced), stress_state)
+        self.fc.update(self.reshape_for_imshow(self.fracture_criteria), stress_state)
+
+        self.morh_reduced.update(
+            snns=self.snns_reduced,
+            taus=self.taus_reduced,
+            fractures_snns=self.fracture_snns_reduced,
+            fractures_taus=self.fracture_taus_reduced,
+            friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
+            )
 
         self.fig.canvas.draw_idle()
 
     def reshape_for_imshow(self, z):
         z = np.array(z).reshape(self.gui_array_resolution)
         return np.fliplr(np.flipud(z.T))
-
-    def update_countourf(self, z, im, stress_state):
-        im, s1, s2, s3, t1, t3 = im
-        im.set_data(self.reshape_for_imshow(z))
-
-        x, y = plane2xy(stress_state.orientation.sigma1)
-        s1.set_offsets(np.c_[x, y])
-        t1.set_position((x, y))
-
-        x, y = plane2xy(stress_state.orientation.sigma2)
-        s2.set_offsets(np.c_[x, y])
-
-        x, y = plane2xy(stress_state.orientation.sigma3)
-        s3.set_offsets(np.c_[x, y])
-        t3.set_position((x, y))
-
-    def update_stereo(self, stress_state):
-        self.update_countourf(self.snns_reduced, self.snn_cont, stress_state)
-        self.update_countourf(self.taus_reduced, self.taus_cont, stress_state)
-        self.update_countourf(self.fracture_criteria, self.fc, stress_state)
-
-    def update_morh(self):
-        self.morh_reduced_scatter.set_offsets(
-            np.c_[self.snns_reduced, self.taus_reduced]
-        )
-
-        self.fracture_reduced_scatter.set_offsets(
-            np.c_[
-                self.fracture_snns_reduced,
-                self.fracture_taus_reduced,
-            ]
-        )
-
-        x1, x2, y1, y2 = self.get_morh_line_coordinates()
-        self.morh_line.set_ydata((y1, y2))
-        self.morh_line.set_xdata((x1, x2))
-
-    def get_morh_line_coordinates(self):
-        tau_f = self.tau_f
-        k_f = self.k_f
-        y1, y2 = 0, 1
-        x1 = (y1 - tau_f)/k_f
-        x2 = (y2 - tau_f)/k_f
-        return x1, x2, y1, y2
- 
-    def plot_single_morh(
-        self, ax, x, y, title="Morh diagram in reduced stress", plot_line=False
-    ):
-        scatter = ax.scatter(self.snns_reduced, self.taus_reduced)
-        ax.set_aspect("equal", "box")
-        ax.set_title(title)
-        ax.set_xlabel(r"$\sigma_{nn}$")
-        ax.set_ylabel(r"$\tau_{n}$")
-        ax.set_xlim((-1.5, 1.5))
-
-        fracture_scatter = None
-        if self.fractures_xx and self.fractures_yy:
-            fracture_scatter = ax.scatter(
-                self.fracture_snns_reduced,
-                self.fracture_taus_reduced,
-                marker="+",
-                color="black",
-            )
-        if plot_line:
-            x1, x2, y1, y2 = self.get_morh_line_coordinates()
-            self.morh_line, = ax.plot((x1, x2), (y1, y2), color="red")
-        return scatter, fracture_scatter
-
-    def plot_morh(self, init_figs=True):
-        if init_figs:
-            self.fig_morh, self.morh_axs = plt.subplots(1, 2, dpi=300, figsize=(12, 6))
-
-        self.morh_scatter = self.plot_single_morh(
-            self.morh_axs[0], self.snns, self.taus, title="Morh diagram"
-        )
-        self.morh_reduced_scatter = self.plot_single_morh(
-            self.morh_axs[1],
-            self.snns_reduced,
-            self.taus_reduced,
-            title="Morh diagram in reduced stress",
-            plot_line=True,
-        )
-
-        self.fig_morh.suptitle(
-            r"$\mu_s$ = %.2f, $\phi$ = %.2f"
-            % (self.stress_state.values.mu_s, self.stress_state.values.phi),
-            fontsize=16,
-        )
-        self.fig_morh.tight_layout()
-
-        if self.output_morh:
-            plt.savefig(self.output_morh)
 
     def plot_gui(self):
         self.fig, self.fig_axs = plt.subplots(2, 3, dpi=100, figsize=(18, 9))
@@ -412,13 +468,14 @@ class Plot:
             norm_zero=False,
         )
 
-        (
-            self.morh_reduced_scatter,
-            self.fracture_reduced_scatter,
-        ) = self.plot_single_morh(
+
+        self.morh_reduced = Morhplot(
             self.fig_axs[1, 1],
             self.snns_reduced,
             self.taus_reduced,
+            friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
+            fractures_snns=self.fracture_snns_reduced,
+            fractures_taus=self.fracture_taus_reduced,
             title="Morh diagram in reduced stress",
             plot_line=True,
         )
@@ -428,11 +485,50 @@ class Plot:
 
         self.fig.tight_layout()
 
+    def plot_morh(self, init_figs=True):
+        if init_figs:
+            self.fig_morh, self.morh_axs = plt.subplots(1, 2, dpi=300, figsize=(12, 6))
+
+        self.morh = Morhplot(
+            self.morh_axs[0],
+            self.snns,
+            self.taus,
+            friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
+            fractures_snns=self.fracture_snns,
+            fractures_taus=self.fracture_taus,
+            title="Morh diagram",
+            plot_line=False,
+        )
+
+
+        self.morh_reduced = Morhplot(
+            self.morh_axs[1],
+            self.snns_reduced,
+            self.taus_reduced,
+            friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
+            fractures_snns=self.fracture_snns_reduced,
+            fractures_taus=self.fracture_taus_reduced,
+            title="Morh diagram in reduced stress",
+            plot_line=True,
+        )
+
+        self.fig_morh.suptitle(
+            r"$\mu_s$ = %.2f, $\phi$ = %.2f"
+            % (self.stress_state.values.mu_s, self.stress_state.values.phi),
+            fontsize=16,
+        )
+        self.fig_morh.tight_layout()
+
+        if self.output_morh:
+            plt.savefig(self.output_morh)
+
     def plot_stereo(self):
         self.fig, self.fig_axs = plt.subplots(2, 3, dpi=300, figsize=(12, 6))
 
         self.snn_cont = self.draw_stereonet(
-            self.snns_reduced, ax=self.fig_axs[0, 1], title=r"$\sigma_{nn}$",
+            self.snns_reduced,
+            ax=self.fig_axs[0, 1],
+            title=r"$\sigma_{nn}$",
             use_contourf=True,
         )
         self.taus_cont = self.draw_stereonet(
@@ -478,8 +574,7 @@ class Plot:
         # draw_stereonet(x, y, phis, axs[2, 0], r'$\phi$', colormap='hsv', levels=180)
 
         self.fig.suptitle(
-            r"$\mu_s$ = %.2f, $\phi$ = %.2f"
-            % (self.stress_state.values.mu_s, self.stress_state.values.phi),
+            rf"$\mu_s$ = {self.stress_state.values.mu_s:.2f}, $\phi$ = {self.stress_state.values.phi:.2f}",
             fontsize=16,
         )
 
@@ -490,58 +585,39 @@ class Plot:
 
     def draw_stereonet(
         self,
-        z,
+        z: ArrayLike,
         ax,
         title,
         colormap=None,
         levels=None,
         directions=None,
-        norm_zero=True,
-        use_contourf=False,
-    ):
+        norm_zero: bool = True,
+        use_contourf: bool = False,
+        show_cbar: bool = True,
+    ) -> Stereonet:
+        """Draw single stereonet plot."""
 
         cmap = colormap or "PuOr"
+        if cmap == "Binary":
+            cmap = colors.ListedColormap(["white", "orange"])
+            show_cbar = False
+
         array = self.reshape_for_imshow(z)
 
-        if cmap == "Binary":
-            cmap = matplotlib.colors.ListedColormap(['white', 'orange'])
-
-        if use_contourf:
-            splot = ax.contourf(
-                array,
-                cmap=cmap,
-                levels=levels,
-                norm=None if not norm_zero else colors.CenteredNorm(),
-                extent=[-1, 1, -1, 1],
-                origin="upper",
-            )
-        else:
-            splot = ax.imshow(
-                array,
-                cmap,
-                norm=None if not norm_zero else colors.CenteredNorm(),
-                extent=[-1, 1, -1, 1],
-            )
-        ax.set_aspect("equal", "box")
-        ax.set_title(title)
-        ax.axis("off")
-        stereonet_border = plt.Circle((0, 0), 1, color="black", fill=False)
-        s1 = ax.scatter(*plane2xy(self.sigma1), marker="s", color="red")
-        s2 = ax.scatter(*plane2xy(self.sigma2), marker="o", color="red")
-        s3 = ax.scatter(*plane2xy(self.sigma3), marker="^", color="red")
-        t1 = ax.text(*plane2xy(self.sigma1), r"$\sigma1$", fontsize=10)
-        t3 = ax.text(*plane2xy(self.sigma3), r"$\sigma3$", fontsize=10)
-        if self.fractures_xx and self.fractures_yy:
-            ax.scatter(self.fractures_xx, self.fractures_yy, marker="+", color="black")
-
-        if directions:
-            for x1, y1, x2, y2 in zip(*directions):
-                ax.plot((x1, x2), (y1, y2), color="black")
-                ax.scatter(x1, y1, marker="o", color="black")
-
-        ax.add_patch(stereonet_border)
-        self.fig.colorbar(splot, ax=ax, spacing="proportional")
-        return splot, s1, s2, s3, t1, t3
+        return Stereonet(
+            array,
+            stress_state=self.stress_state,
+            ax=ax,
+            title=title,
+            fractures_xx=self.fractures_xx,
+            fractures_yy=self.fractures_yy,
+            colormap=cmap,
+            levels=levels,
+            directions=directions,
+            norm_zero=norm_zero,
+            use_contourf=use_contourf,
+            show_cbar=show_cbar,
+        )
 
 
 plot = Plot()
