@@ -1,11 +1,11 @@
 import click
 
-from stress_state_plot.calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
-from stress_state_plot.plot import plot
-from stress_state_plot.entities import StressState
-from stress_state_plot.load_from_file import load_fractures
-from stress_state_plot.save_to_xlsx import save_to_xlsx
-from stress_state_plot.gui import gui
+from .calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
+from .plot import plot
+from .entities import StressState
+from .load_from_file import load_fractures
+from .save_to_xlsx import save_to_xlsx
+from .gui import gui
 
 
 def parse_sigma_orientation(string_value):
