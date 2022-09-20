@@ -66,6 +66,8 @@ class Morhplot:
 
     def update_scale(self):
         x_min, x_max = self.stress_state.snn_limits
+        x_min = min(0, x_min)
+        x_max = max(0, x_max)
         tau = self.stress_state.values.tau
         self.ax.set_xlim((x_min - 0.2 * tau, x_max + 0.2 * tau))
         self.ax.set_ylim(0, 1.2 * tau)
@@ -133,6 +135,7 @@ class Stereonet:
         norm_zero: bool = True,
         use_contourf: bool = False,
         show_cbar: bool = True,
+        vmin = None,
     ):
         """Draw single stereonet plot."""
 
@@ -155,6 +158,7 @@ class Stereonet:
                 cmap=colormap,
                 norm=None if not norm_zero else colors.CenteredNorm(),
                 extent=[-1, 1, -1, 1],
+                vmin=vmin,
             )
 
         ax.set_aspect("equal", "box")
@@ -645,9 +649,11 @@ class Plot:
         """Draw single stereonet plot."""
 
         cmap = colormap or "PuOr"
+        vmin = None
         if cmap == "Binary":
-            cmap = colors.ListedColormap(["grey", "white", "orange"])
+            cmap = colors.ListedColormap(["red", "grey", "white", "orange"])
             show_cbar = False
+            vmin = -2
 
         array = self.reshape_for_imshow(z)
 
@@ -664,6 +670,7 @@ class Plot:
             norm_zero=norm_zero,
             use_contourf=use_contourf,
             show_cbar=show_cbar,
+            vmin=vmin,
         )
 
 
