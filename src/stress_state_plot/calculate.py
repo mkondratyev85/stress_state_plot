@@ -213,14 +213,11 @@ def fracture_criteria(stress_on_plane, tau_f, k_f):
 def fracture_criteria_formulae(s_nn, tau_n, tau_f, k_f):
     tau2 = tau_n - k_f * s_nn
     if tau2 > tau_f:
-        return -2#np.nan
+        return -2
     tau_f = 0
     tau2 = tau_n - k_f * s_nn
-    # print (s_nn)
     if s_nn < 0:
         return -1
     if tau_f > tau2:
         return 0
     return 1
-
-    # return 0 if tau_f > tau2 else 1

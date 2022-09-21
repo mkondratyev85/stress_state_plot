@@ -16,6 +16,7 @@ from .plane import plane2xy
 from .calculate import fracture_criteria as fracture_criteria_func
 from .entities import StressState, FrictionState
 
+fc_cmap = colors.ListedColormap(["red", "grey", "white", "orange"])
 
 class Morhplot:
     def __init__(
@@ -25,6 +26,7 @@ class Morhplot:
         taus,
         friction_state: FrictionState,
         stress_state: StressState,
+        fracture_criteria=None,
         fractures_snns=None,
         fractures_taus=None,
         title: str = "Morh diagram in reduced stress",
@@ -36,7 +38,15 @@ class Morhplot:
         self.ax = ax
 
         self.init_plot(title)
-        self.scatter = self.ax.scatter(snn, taus)
+        self.scatter = self.ax.scatter(snn, taus, c=fracture_criteria, cmap=fc_cmap, vmin=-2)
+
+        self.sigma3_circle = plt.Circle((0, 0), 1, fill=False)
+        self.sigma1_circle = plt.Circle((0, 0), 1, fill=False)
+        self.sigma2_circle = plt.Circle((0, 0), 1, fill=False)
+        ax.add_artist(self.sigma3_circle)
+        ax.add_artist(self.sigma2_circle)
+        ax.add_artist(self.sigma1_circle)
+        self.update_circles()
 
         if fractures_snns and fractures_taus:
             self.fracture_scatter = ax.scatter(
@@ -64,6 +74,23 @@ class Morhplot:
         self.morh_line.set_xdata((x1, x2))
         self.ax.plot((0, 0), (0, 50), color="red")
 
+    def update_circles(self):
+        r = self.stress_state.values.tau
+        s1 = self.stress_state.values.sigma1
+        s2 = self.stress_state.values.sigma2
+        s3 = self.stress_state.values.sigma3
+        c1 = (s3 + s1)/2
+        c2 = (s2+s3)/2
+        c3 = (s2+s1)/2
+        r2 = (s2-s3)/2
+        r3 = (s1-s2)/2
+        self.sigma3_circle.center = c1, 0
+        self.sigma3_circle.radius = r
+        self.sigma2_circle.center = c2, 0
+        self.sigma2_circle.radius = r2
+        self.sigma1_circle.center = c3, 0
+        self.sigma1_circle.radius = r3
+
     def update_scale(self):
         x_min, x_max = self.stress_state.snn_limits
         x_min = min(0, x_min)
@@ -73,9 +100,10 @@ class Morhplot:
         self.ax.set_ylim(0, 1.2 * tau)
 
     def update(
-        self, snns, taus, fractures_snns, fractures_taus, friction_state: FrictionState, stress_state: StressState,
+        self, snns, taus, fractures_snns, fractures_taus, friction_state: FrictionState, stress_state: StressState, fracture_criteria=None,
     ):
         self.scatter.set_offsets(np.c_[snns, taus])
+        self.scatter.set_array(fracture_criteria)
         self.friction_state = friction_state
         self.stress_state = stress_state
 
@@ -91,6 +119,7 @@ class Morhplot:
         self.morh_line_brittle.set_xdata((x1, x2))
 
         self.update_scale()
+        self.update_circles()
 
     @property
     def limit_friction_line_coords(self):
@@ -483,6 +512,7 @@ class Plot:
             fractures_snns=self.fracture_snns,
             fractures_taus=self.fracture_taus,
             friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
+            fracture_criteria=self.fracture_criteria,
             stress_state=self.stress_state,
         )
 
@@ -524,6 +554,7 @@ class Plot:
             self.taus,
             friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
             stress_state=self.stress_state,
+            fracture_criteria=self.fracture_criteria,
             fractures_snns=self.fracture_snns,
             fractures_taus=self.fracture_taus,
             title="Morh diagram",
@@ -547,21 +578,22 @@ class Plot:
             stress_state=self.stress_state,
             fractures_snns=self.fracture_snns,
             fractures_taus=self.fracture_taus,
+            fracture_criteria=self.fracture_criteria,
             title="Morh diagram",
-            plot_line=False,
-        )
-
-        self.morh_reduced = Morhplot(
-            self.morh_axs[1],
-            self.snns_reduced,
-            self.taus_reduced,
-            friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
-            stress_state=self.stress_state,
-            fractures_snns=self.fracture_snns_reduced,
-            fractures_taus=self.fracture_taus_reduced,
-            title="Morh diagram in reduced stress",
             plot_line=True,
         )
+
+        # self.morh_reduced = Morhplot(
+        #     self.morh_axs[1],
+        #     self.snns_reduced,
+        #     self.taus_reduced,
+        #     friction_state=FrictionState(k_f=self.k_f, tau_f=self.tau_f),
+        #     stress_state=self.stress_state,
+        #     fractures_snns=self.fracture_snns_reduced,
+        #     fractures_taus=self.fracture_taus_reduced,
+        #     title="Morh diagram in reduced stress",
+        #     plot_line=True,
+        # )
 
         self.fig_morh.suptitle(
             r"$\mu_s$ = %.2f, $\phi$ = %.2f"
@@ -651,7 +683,7 @@ class Plot:
         cmap = colormap or "PuOr"
         vmin = None
         if cmap == "Binary":
-            cmap = colors.ListedColormap(["red", "grey", "white", "orange"])
+            cmap = fc_cmap
             show_cbar = False
             vmin = -2
 
