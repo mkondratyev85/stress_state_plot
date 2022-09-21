@@ -5,6 +5,7 @@
 """
 
 from dataclasses import dataclass
+from typing import Tuple
 
 from .plane import Plane
 
@@ -168,15 +169,6 @@ class FrictionState:
     k_f: float
     tau_f: float
 
-    def get_morh_line_coordinates(self):
-        tau_f = self.tau_f
-        k_f = self.k_f
-        y1, y2 = 0, 1
-        x1 = (y1 - tau_f) / k_f
-        x2 = (y2 - tau_f) / k_f
-        return x1, x2, y1, y2
-
-
 class StressState:
     """
     Stress state described in sigma values and sigma orientations.
@@ -188,6 +180,10 @@ class StressState:
     def __init__(self, orientations, values):
         self.orientation = StressStateOrientation(**orientations)
         self.values = StressStateValues(**values)
+
+    @property
+    def snn_limits(self) -> Tuple[float, float]:
+        return -1*(self.values.p + self.values.tau), -1*(self.values.p - self.values.tau)
 
     def __repr__(self):
         return "STRESS STATE:\n\n" f"{self.orientation}\n" "\n" f"{self.values}"
