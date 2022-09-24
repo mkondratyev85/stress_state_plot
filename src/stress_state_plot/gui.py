@@ -3,7 +3,7 @@
 
 from .entities import StressState
 from .calculate import calculate_stress_on_planes, calculate_stresses_on_fractures
-from .plot2 import plot
+from .plot import plot
 
 
 def recalculate_stress(stress_state, planes=None):

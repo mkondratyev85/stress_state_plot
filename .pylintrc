@@ -1,0 +1,17 @@
+[BASIC]
+
+good-names=i,j,k,s1,s2,s3,t1,t2,t3,x,y,z,x1,x2,y1,y2,ax
+
+[DESIGN]
+
+# Maximum number of arguments for function / method
+max-args=15
+
+# Maximum number of locals for function / method body
+max-locals=25
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes=21
+
+# Minimum number of public methods for a class (see R0903).
+min-public-methods=1
