@@ -96,8 +96,10 @@ class Morhplot:
         x_min = min(0, x_min)
         x_max = max(0, x_max)
         tau = self.stress_state.values.tau
+        y_max = max(tau, self.friction_state.tau_f)
+
         self.ax.set_xlim((x_min - 0.2 * tau, x_max + 0.2 * tau))
-        self.ax.set_ylim(0, 1.2 * tau)
+        self.ax.set_ylim(0, 1.2 * y_max)
 
     def update(
         self, snns, taus, fractures_snns, fractures_taus, friction_state: FrictionState, stress_state: StressState, fracture_criteria=None,
